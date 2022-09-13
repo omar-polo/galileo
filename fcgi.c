@@ -201,12 +201,17 @@ fcgi_inflight_dec(const char *why)
 }
 
 void
-fcgi_accept(struct galileo *env)
+fcgi_accept(int fd, short event, void *arg)
 {
+	struct galileo		*env = arg;
 	struct fcgi		*fcgi = NULL;
 	socklen_t		 slen;
 	struct sockaddr_storage	 ss;
 	int			 s = -1;
+
+	event_add(&env->sc_evpause, NULL);
+	if ((event & EV_TIMEOUT))
+		return;
 
 	slen = sizeof(ss);
 	if ((s = accept_reserve(env->sc_sock_fd, (struct sockaddr *)&ss,

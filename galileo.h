@@ -136,7 +136,7 @@ int	 config_getreset(struct galileo *, struct imsg *);
 /* fcgi.c */
 int	 fcgi_end_request(struct client *, int);
 int	 fcgi_abort_request(struct client *);
-void	 fcgi_accept(struct galileo *);
+void	 fcgi_accept(int, short, void *);
 void	 fcgi_read(struct bufferevent *, void *);
 void	 fcgi_write(struct bufferevent *, void *);
 void	 fcgi_error(struct bufferevent *, short error, void *);

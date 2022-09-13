@@ -51,7 +51,6 @@ extern void	 bufferevent_read_pressure_cb(struct evbuffer *, size_t,
 
 void	proxy_init(struct privsep *, struct privsep_proc *, void *);
 int	proxy_launch(struct galileo *);
-void	proxy_accept(int, short, void *);
 void	proxy_inflight_dec(const char *);
 int	proxy_dispatch_parent(int, struct privsep_proc *, struct imsg *);
 void	proxy_resolved(struct asr_result *, void *);
@@ -103,15 +102,6 @@ proxy_purge(struct server *srv)
 }
 
 void
-proxy_accept(int fd, short event, void *arg)
-{
-	struct galileo	*env = arg;
-
-	log_debug("%s", __func__);
-	fcgi_accept(env);
-}
-
-void
 proxy_inflight_dec(const char *why)
 {
 	proxy_inflight--;
@@ -143,9 +133,9 @@ proxy_dispatch_parent(int fd, struct privsep_proc *p, struct imsg *imsg)
 			fatal("config_getsock");
 
 		event_set(&env->sc_evsock, env->sc_sock_fd,
-		    EV_READ | EV_PERSIST, proxy_accept, env);
+		    EV_READ | EV_PERSIST, fcgi_accept, env);
 		event_add(&env->sc_evsock, NULL);
-		/* evtimer_set(&env->sc_evpause, proxy_accept_paused, env); */
+		evtimer_set(&env->sc_evpause, fcgi_accept, env);
 		break;
 	case IMSG_CFG_DONE:
 		log_debug("config done!");
