@@ -486,7 +486,8 @@ done:
 	bufferevent_enable(clt->clt_bev, EV_READ|EV_WRITE);
 
 	/* TODO: compute the URL */
-	if (evbuffer_add_printf(out, "gemini://localhost/\r\n") == -1) {
+	if (evbuffer_add_printf(out, "gemini://%s/%s\r\n",
+	    clt->clt_pc->proxy_name, clt->clt_path_info) == -1) {
 		log_warn("bufferevent_printf failed");
 		goto err;
 	}
