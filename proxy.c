@@ -264,7 +264,7 @@ gemtext_translate_line(struct client *clt, char *line)
 		return (0);
 	}
 
-	/* link -- XXX: group */
+	/* link -- XXX: group -- XXX: relativify from SCRIPT_NAME */
 	if (!strncmp(line, "=>", 2)) {
 		char *label;
 
