@@ -593,6 +593,18 @@ clt_write(struct client *clt, const uint8_t *buf, size_t len)
 }
 
 int
+clt_putc(struct client *clt, char ch)
+{
+	return (clt_write(clt, &ch, 1));
+}
+
+int
+clt_puts(struct client *clt, const char *str)
+{
+	return (clt_write(clt, str, strlen(str)));
+}
+
+int
 clt_write_bufferevent(struct client *clt, struct bufferevent *bev)
 {
 	struct evbuffer		*src = EVBUFFER_INPUT(bev);

@@ -65,6 +65,8 @@ struct client {
 	struct tls		*clt_ctx;
 	struct bufferevent	*clt_bev;
 	int			 clt_headersdone;
+	int			 clt_translate;
+	int			 clt_inpre;
 
 	char			 clt_buf[1024];
 	size_t			 clt_buflen;
@@ -140,6 +142,8 @@ void	 fcgi_accept(int, short, void *);
 void	 fcgi_read(struct bufferevent *, void *);
 void	 fcgi_write(struct bufferevent *, void *);
 void	 fcgi_error(struct bufferevent *, short error, void *);
+int	 clt_putc(struct client *, char);
+int	 clt_puts(struct client *, const char *);
 int	 clt_write_bufferevent(struct client *, struct bufferevent *);
 int	 clt_flush(struct client *);
 int	 clt_write(struct client *, const uint8_t *, size_t);
