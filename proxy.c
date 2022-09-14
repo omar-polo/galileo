@@ -551,7 +551,6 @@ proxy_read(struct bufferevent *bev, void *d)
 	const char		*ctype;
 	char			*hdr;
 	size_t			 len;
-	int			 code;
 
 	if (clt->clt_headersdone) {
 	copy:
@@ -579,11 +578,24 @@ proxy_read(struct bufferevent *bev, void *d)
 		return;
 	}
 
-	code = (hdr[0] - '0') * 10 + (hdr[1] - '0');
-	if (code != 20) {
-		log_warnx("un-handled gemini reply status %d", code);
-		free(hdr);
-		proxy_error(bev, EV_READ, clt);
+	switch (hdr[0]) {
+	case '2':
+		/* handled below */
+		break;
+	default:
+		if (clt_puts(clt, "Status: 501\r\n") == -1)
+			return;
+		if (clt_puts(clt,
+		    "Content-Type: text/plain;charset=utf8\r\n") == -1)
+			return;
+		if (clt_puts(clt, "\r\n") == -1)
+			return;
+		if (clt_printf(clt, "Request failed with code %c%c\n\n",
+		    hdr[0], hdr[1]) == -1)
+			return;
+		if (clt_printf(clt, "The server says: %s\n", &hdr[3]) == -1)
+			return;
+		fcgi_end_request(clt, 1);
 		return;
 	}
 
