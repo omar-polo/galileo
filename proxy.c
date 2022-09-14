@@ -623,7 +623,6 @@ proxy_read(struct bufferevent *bev, void *d)
 	size_t			 len;
 
 	if (clt->clt_headersdone) {
-	copy:
 		if (clt->clt_translate)
 			proxy_translate_gemtext(clt);
 		else
@@ -643,9 +642,8 @@ proxy_read(struct bufferevent *bev, void *d)
 	    !isdigit((unsigned char)hdr[1]) ||
 	    hdr[2] != ' ') {
 		log_warnx("invalid ");
-		free(hdr);
 		proxy_error(bev, EV_READ, clt);
-		return;
+		goto err;
 	}
 
 	switch (hdr[0]) {
@@ -654,34 +652,34 @@ proxy_read(struct bufferevent *bev, void *d)
 		break;
 	default:
 		if (clt_puts(clt, "Status: 501\r\n") == -1)
-			return;
+			goto err;
 		if (clt_puts(clt,
 		    "Content-Type: text/plain;charset=utf8\r\n") == -1)
-			return;
+			goto err;
 		if (clt_puts(clt, "\r\n") == -1)
-			return;
+			goto err;
 		if (clt_printf(clt, "Request failed with code %c%c\n\n",
 		    hdr[0], hdr[1]) == -1)
-			return;
+			goto err;
 		if (clt_printf(clt, "The server says: %s\n", &hdr[3]) == -1)
-			return;
+			goto err;
 		fcgi_end_request(clt, 1);
-		return;
+		goto err;
 	}
 
 	mime = hdr + 2 + strspn(hdr + 2, " \t");
 	if (parse_mime(clt, mime, lang, sizeof(lang)) == -1) {
 		if (clt_puts(clt, "Status: 501\r\n") == -1)
-			return;
+			goto err;
 		if (clt_puts(clt,
 		    "Content-Type: text/plain;charset=utf8\r\n") == -1)
-			return;
+			goto err;
 		if (clt_puts(clt, "\r\n") == -1)
-			return;
+			goto err;
 		if (clt_printf(clt, "Failed to parse the Gemini response\n")
 		    == -1)
 		fcgi_end_request(clt, 1);
-		return;
+		goto err;
 	}
 
 	if (clt->clt_translate)
@@ -690,30 +688,39 @@ proxy_read(struct bufferevent *bev, void *d)
 		ctype = mime;
 
 	if (clt_printf(clt, "Content-Type: %s\r\n\r\n", ctype) == -1)
-		return;
+		goto err;
 
 	clt->clt_headersdone = 1;
 
 	if (clt->clt_translate) {
 		if (clt_puts(clt, "<!doctype html><html") == -1)
-			return;
+			goto err;
 		if (*lang != '\0') {
 			if (clt_puts(clt, " lang='") == -1 ||
 			    printurl(clt, lang) == -1 ||
 			    clt_puts(clt, "'") == -1)
-				return;
+				goto err;
 		}
 		if (clt_puts(clt, "><head>") == -1)
-			return;
+			goto err;
 		if (*pc->stylesheet != '\0' &&
 		    clt_printf(clt, "<link rel='stylesheet' href='%s' />",
 		    pc->stylesheet) == -1)
-			return;
+			goto err;
 		if (clt_puts(clt, "</head><body>") == -1)
-			return;
+			goto err;
 	}
 
-	goto copy;
+	/*
+	 * Trigger the read again so we proceed with the response
+	 * body, if any.
+	 */
+	free(hdr);
+	proxy_read(bev, d);
+	return;
+
+err:
+	free(hdr);
 }
 
 void
