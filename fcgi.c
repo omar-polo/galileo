@@ -177,6 +177,10 @@ end_request(struct client *clt, int status, int proto_status)
 
 	SPLAY_REMOVE(client_tree, &fcgi->fcg_clients, clt);
 	proxy_client_free(clt);
+
+	if (!fcgi->fcg_keep_conn)
+		fcgi->fcg_done = 1;
+
 	return (0);
 }
 
@@ -511,8 +515,10 @@ void
 fcgi_write(struct bufferevent *bev, void *d)
 {
 	struct fcgi		*fcgi = d;
+	struct evbuffer		*out = EVBUFFER_OUTPUT(bev);
 
-	(void)fcgi;
+	if (fcgi->fcg_done && EVBUFFER_LENGTH(out) == 0)
+		fcgi_error(bev, EVBUFFER_EOF, fcgi);
 }
 
 void

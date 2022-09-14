@@ -90,6 +90,7 @@ struct fcgi {
 	int			 fcg_type;
 	uint16_t		 fcg_rec_id;
 	int			 fcg_keep_conn;
+	int			 fcg_done;
 
 	struct galileo		*fcg_env;
 
