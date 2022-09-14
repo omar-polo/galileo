@@ -1,0 +1,122 @@
+.\"
+.\" Copyright (c) 2022 Omar Polo
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.Dd September 14, 2022
+.Dt GALILEO.CONF 5
+.Os
+.Sh NAME
+.Nm galileo.conf
+.Nd galileo configuration file
+.Sh DESCRIPTION
+.Nm
+is the run-time configuration file for
+.Xr galileo 8 .
+.Pp
+The file format is line-based, with one configuration directive per line.
+Any lines beginning with a
+.Sq #
+are treated as comments and ignored.
+.Sh GLOBAL CONFIGURATION
+The available global configuration directives are as follows:
+.Bl -tag -width Ds
+.It Ic chroot Ar path
+Set the path to the
+.Xr chroot 2
+used by
+.Xr galileo 8 .
+.It Ic prefork Ar number
+Specify the number of proxy processes.
+.El
+.Sh SERVER CONFIGURATION
+At least one server context must exist for
+.Xr galileo 8
+to work.
+.Pp
+A server context is declared with a unique
+.Ar name ,
+followed by server-specific configuration directive inside curly braces:
+.Pp
+.Ic server Ar name Brq ...
+.Pp
+The available server configuration directives are as follows:
+.Bl -tag -width Ds
+.It Ic proxy Brq ...
+Define the proxy configuration for the matching host.
+The available proxy configuration directives are as follows:
+.Bl -tag -width Ds
+.It Ic source Ar address Ic port Ar port
+Specify to which
+.Ar address
+and
+.Ar port
+connect to.
+.It Ic hostname Ar name
+Specify the
+.Ar name
+used for SNI and the Gemini request.
+.El
+.It Ic stylesheet Ar path
+Specify the path to the stylesheet linked in the generated HTML.
+.El
+.Sh FILES
+.Bl -tag -width Ds -compact
+.It Pa /etc/galileo.conf
+Default location of the
+.Nm
+configuration file.
+.El
+.Sh EXAMPLES
+The following example will proxy the Gemini capsule
+.Sq gemini://gemini.example.com
+as
+.Sq https://www.example.com
+.Pq or Sq http://
+assuming a Gemini server is listening on 127.0.0.1:
+.Bd -literal -offset indent
+server "www.example.com" {
+	proxy {
+		source 127.0.0.1 port 1965
+		hostname "gemini.example.com"
+	}
+	stylesheet "/galileo.css"
+}
+.Ed
+.Pp
+The matching configuration for
+.Xr httpd 8
+is:
+.Bd -literal -offset indent
+server "www.example.com" {
+	listen on * port 80
+	listen on * tls port 443
+	tls {
+		certificate "/etc/ssl/example.com.fullchain.pem"
+		key "/etc/ssl/private/example.com.key"
+	}
+	location "/.well-known/acme-challenge/*" {
+		root "/acme"
+		request strip 2
+	}
+	location "/galileo.css" {
+		root "/htdocs"
+	}
+	location "/*" {
+		fastcgi socket "/run/galileo.sock"
+	}
+}
+.Ed
+.Sh SEE ALSO
+.Xr httpd.conf 5 ,
+.Xr galileo 8 ,
+.Xr httpd 8
