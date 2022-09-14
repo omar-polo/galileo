@@ -674,6 +674,19 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 		if (clt_printf(clt, "Proxy error\n") == -1)
 			return;
 	} else if (status == 0) {
+		if (clt_puts(clt, "<footer>") == -1 ||
+		    clt_puts(clt, "<hr />") == -1 ||
+		    clt_puts(clt, "<dl>") == -1 ||
+		    clt_puts(clt, "<dt>Original URL:</dt>") == -1 ||
+		    clt_puts(clt, "<dd><a href='gemini://") == -1 ||
+		    printurl(clt, clt->clt_pc->proxy_name) == -1 ||
+		    printurl(clt, clt->clt_path_info) == -1 ||
+		    clt_puts(clt, "'>gemini://") == -1 ||
+		    htmlescape(clt, clt->clt_pc->proxy_name) == -1 ||
+		    htmlescape(clt, clt->clt_path_info) == -1 ||
+		    clt_puts(clt, "</a></dd>") == -1 ||
+		    clt_puts(clt, "</footer>") == -1)
+			return;
 		if (clt_puts(clt, "</body></html>") == -1)
 			return;
 	}
