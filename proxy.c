@@ -603,7 +603,6 @@ proxy_read(struct bufferevent *bev, void *d)
 	if (clt->clt_translate) {
 		if (clt_puts(clt, "<!doctype html><html><head>") == -1)
 			return;
-		log_debug("stylesheet is %s", pc->stylesheet);
 		if (*pc->stylesheet != '\0' &&
 		    clt_printf(clt, "<link rel='stylesheet' href='%s' />",
 		    pc->stylesheet) == -1)
