@@ -585,6 +585,7 @@ parse_mime(struct client *clt, char *mime, char *lang, size_t len)
 		if (!strncmp(t, "charset=", 8)) {
 			t += 8;
 			if (!strncasecmp(t, "utf8", 4) ||
+			    !strncasecmp(t, "utf-8", 5) ||
 			    !strncasecmp(t, "ascii", 5)) {
 				log_debug("unknown charset %s", t);
 				return (-1);
@@ -654,7 +655,7 @@ proxy_read(struct bufferevent *bev, void *d)
 		if (clt_puts(clt, "Status: 501\r\n") == -1)
 			goto err;
 		if (clt_puts(clt,
-		    "Content-Type: text/plain;charset=utf8\r\n") == -1)
+		    "Content-Type: text/plain;charset=utf-8\r\n") == -1)
 			goto err;
 		if (clt_puts(clt, "\r\n") == -1)
 			goto err;
@@ -672,7 +673,7 @@ proxy_read(struct bufferevent *bev, void *d)
 		if (clt_puts(clt, "Status: 501\r\n") == -1)
 			goto err;
 		if (clt_puts(clt,
-		    "Content-Type: text/plain;charset=utf8\r\n") == -1)
+		    "Content-Type: text/plain;charset=utf-8\r\n") == -1)
 			goto err;
 		if (clt_puts(clt, "\r\n") == -1)
 			goto err;
@@ -683,7 +684,7 @@ proxy_read(struct bufferevent *bev, void *d)
 	}
 
 	if (clt->clt_translate)
-		ctype = "text/html;charset=utf8";
+		ctype = "text/html;charset=utf-8";
 	else
 		ctype = mime;
 
