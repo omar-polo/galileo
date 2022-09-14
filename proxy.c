@@ -707,6 +707,10 @@ proxy_read(struct bufferevent *bev, void *d)
 		    clt_printf(clt, "<link rel='stylesheet' href='%s' />",
 		    pc->stylesheet) == -1)
 			goto err;
+		if (clt_puts(clt,
+		    "<meta name='viewport' content='initial-scale=1' />")
+		    == -1)
+			goto err;
 		if (clt_puts(clt, "</head><body>") == -1)
 			goto err;
 	}
