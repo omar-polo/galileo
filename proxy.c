@@ -317,6 +317,10 @@ gemtext_translate_line(struct client *clt, char *line)
 		return (0);
 	}
 
+	/* Not following strictly the gemini specification... */
+	if (*line == '\0')
+		return (0);
+
 	/* paragraph */
 	if (clt_puts(clt, "<p>") == -1 ||
 	    htmlescape(clt, line) == -1 ||
