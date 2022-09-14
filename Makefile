@@ -21,4 +21,12 @@ CDIAGFLAGS+=	-Werror
 LDADD =		-levent -ltls -lutil
 DPADD =		${LIBEVENT} ${LIBTLS} ${LIBUTIL}
 
+PREFIX?=	/usr/local
+SBINDIR?=	${PREFIX}/sbin
+MANDIR?=	${PREFIX}/man/man
+
+realinstall:
+	${INSTALL} ${INSTALL_COPY} -o ${BINOWN} -g ${BINGRP} \
+		-m ${BINMODE} ${PROG} ${SBINDIR}/${PROG}
+
 .include <bsd.prog.mk>
