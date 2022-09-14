@@ -751,6 +751,24 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 		if (clt_printf(clt, "Proxy error\n") == -1)
 			return;
 	} else if (status == 0) {
+		if (clt->clt_translate & TR_PRE) {
+			if (clt_puts(clt, "</pre>"))
+				return;
+			clt->clt_translate &= ~TR_PRE;
+		}
+
+		if (clt->clt_translate & TR_LIST) {
+			if (clt_puts(clt, "</ul>") == -1)
+				return;
+			clt->clt_translate &= ~TR_LIST;
+		}
+
+		if (clt->clt_translate & TR_NAV) {
+			if (clt_puts(clt, "</ul></nav>") == -1)
+				return;
+			clt->clt_translate &= ~TR_NAV;
+		}
+
 		if (clt_puts(clt, "<footer>") == -1 ||
 		    clt_puts(clt, "<hr />") == -1 ||
 		    clt_puts(clt, "<dl>") == -1 ||
