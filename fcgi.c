@@ -314,6 +314,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			evbuffer_remove(src, &server, vlen);
 			server[vlen] = '\0';
 
+			free(clt->clt_server_name);
 			if ((clt->clt_server_name = strdup(server)) == NULL)
 				return (-1);
 			log_debug("clt %d: server_name: %s", clt->clt_id,
@@ -327,6 +328,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			evbuffer_remove(src, &path, vlen);
 			path[vlen] = '\0';
 
+			free(clt->clt_script_name);
 			if ((clt->clt_script_name = strdup(path)) == NULL)
 				return (-1);
 			log_debug("clt %d: script_name: %s", clt->clt_id,
@@ -343,6 +345,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			if (vlen == 0)
 				(void) strlcpy(path, "/", sizeof(path));
 
+			free(clt->clt_path_info);
 			if ((clt->clt_path_info = strdup(path)) == NULL)
 				return (-1);
 			log_debug("clt %d: path_info: %s", clt->clt_id,
