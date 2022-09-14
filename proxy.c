@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <event.h>
+#include <fnmatch.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -248,12 +249,6 @@ gemtext_translate_line(struct client *clt, char *line)
 	if (!strncmp(line, "=>", 2)) {
 		char *label;
 
-		if (!(clt->clt_translate & TR_NAV)) {
-			if (clt_puts(clt, "<nav><ul>") == -1)
-				return (-1);
-			clt->clt_translate |= TR_NAV;
-		}
-
 		line += 2;
 		line += strspn(line, " \t");
 
@@ -262,6 +257,36 @@ gemtext_translate_line(struct client *clt, char *line)
 			label = line;
 		else
 			*label++ = '\0';
+
+		if (fnmatch("*.jpg", line, 0) == 0 ||
+		    fnmatch("*.jpeg", line, 0) == 0 ||
+		    fnmatch("*.gif", line, 0) == 0 ||
+		    fnmatch("*.png", line, 0) == 0 ||
+		    fnmatch("*.svg", line, 0) == 0 ||
+		    fnmatch("*.webp", line, 0) == 0) {
+			if (clt->clt_translate & TR_NAV) {
+				if (clt_puts(clt, "</ul></nav>") == -1)
+					return (-1);
+				clt->clt_translate &= ~TR_NAV;
+			}
+
+			if (clt_puts(clt, "<figure><a href='") == -1 ||
+			    printurl(clt, line) == -1 ||
+			    clt_puts(clt, "'><img src='") == -1 ||
+			    printurl(clt, line) == -1 ||
+			    clt_puts(clt, "' /></a><figcaption>") == -1 ||
+			    htmlescape(clt, label) == -1 ||
+			    clt_puts(clt, "</figcaption></figure>") == -1)
+				return (-1);
+
+			return (0);
+		}
+
+		if (!(clt->clt_translate & TR_NAV)) {
+			if (clt_puts(clt, "<nav><ul>") == -1)
+				return (-1);
+			clt->clt_translate |= TR_NAV;
+		}
 
 		if (clt_puts(clt, "<li><a href='") == -1 ||
 		    printurl(clt, line) == -1 ||
