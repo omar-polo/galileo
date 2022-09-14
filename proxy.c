@@ -567,6 +567,50 @@ err:
 	fcgi_end_request(clt, 1);
 }
 
+static inline int
+parse_mime(struct client *clt, char *mime, char *lang, size_t len)
+{
+	char			*t, *semi;
+
+	if (strncmp(mime, "text/gemini", 11) != 0)
+		return (0);
+
+	clt->clt_translate = TR_ENABLED;
+
+	if ((mime = strchr(mime, ';')) == NULL)
+		return (0);
+
+	*mime++ = '\0';
+	while ((t = strsep(&mime, ";")) != NULL) {
+		if (!strncmp(t, "charset=", 8)) {
+			t += 8;
+			if (!strncasecmp(t, "utf8", 4) ||
+			    !strncasecmp(t, "ascii", 5)) {
+				log_debug("unknown charset %s", t);
+				return (-1);
+			}
+			continue;
+		}
+
+		if (!strncmp(t, "lang=", 5)) {
+			t += 5;
+			if ((semi = strchr(t, ';')) != NULL)
+				*semi = '\0';
+
+			if (strlcpy(lang, t, len) >= len) {
+				log_debug("lang too long: %s", t);
+				*lang = '\0';
+			}
+
+			if (semi)
+				*semi = ';';
+			continue;
+		}
+	}
+
+	return (0);
+}
+
 void
 proxy_read(struct bufferevent *bev, void *d)
 {
@@ -574,7 +618,8 @@ proxy_read(struct bufferevent *bev, void *d)
 	struct proxy_config	*pc = clt->clt_pc;
 	struct evbuffer		*src = EVBUFFER_INPUT(bev);
 	const char		*ctype;
-	char			*hdr;
+	char			 lang[16];
+	char			*hdr, *mime;
 	size_t			 len;
 
 	if (clt->clt_headersdone) {
@@ -624,21 +669,41 @@ proxy_read(struct bufferevent *bev, void *d)
 		return;
 	}
 
-	if (!strncmp(&hdr[3], "text/gemini", 11)) {
-		ctype = "text/html; charset=utf8";
-		clt->clt_translate = TR_ENABLED;
-	} else
-		ctype = &hdr[3];
-
-	if (clt_printf(clt, "Content-Type: %s\r\n", ctype) == -1)
+	mime = hdr + 2 + strspn(hdr + 2, " \t");
+	if (parse_mime(clt, mime, lang, sizeof(lang)) == -1) {
+		if (clt_puts(clt, "Status: 501\r\n") == -1)
+			return;
+		if (clt_puts(clt,
+		    "Content-Type: text/plain;charset=utf8\r\n") == -1)
+			return;
+		if (clt_puts(clt, "\r\n") == -1)
+			return;
+		if (clt_printf(clt, "Failed to parse the Gemini response\n")
+		    == -1)
+		fcgi_end_request(clt, 1);
 		return;
-	if (clt_printf(clt, "\r\n") == -1)
+	}
+
+	if (clt->clt_translate)
+		ctype = "text/html;charset=utf8";
+	else
+		ctype = mime;
+
+	if (clt_printf(clt, "Content-Type: %s\r\n\r\n", ctype) == -1)
 		return;
 
 	clt->clt_headersdone = 1;
 
 	if (clt->clt_translate) {
-		if (clt_puts(clt, "<!doctype html><html><head>") == -1)
+		if (clt_puts(clt, "<!doctype html><html") == -1)
+			return;
+		if (*lang != '\0') {
+			if (clt_puts(clt, " lang='") == -1 ||
+			    printurl(clt, lang) == -1 ||
+			    clt_puts(clt, "'") == -1)
+				return;
+		}
+		if (clt_puts(clt, "><head>") == -1)
 			return;
 		if (*pc->stylesheet != '\0' &&
 		    clt_printf(clt, "<link rel='stylesheet' href='%s' />",
