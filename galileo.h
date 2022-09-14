@@ -65,8 +65,12 @@ struct client {
 	struct tls		*clt_ctx;
 	struct bufferevent	*clt_bev;
 	int			 clt_headersdone;
+
+#define TR_ENABLED	0x1
+#define TR_PRE		0x2
+#define TR_LIST		0x4
+#define TR_NAV		0x8
 	int			 clt_translate;
-	int			 clt_inpre;
 
 	char			 clt_buf[1024];
 	size_t			 clt_buflen;

@@ -206,9 +206,9 @@ static int
 gemtext_translate_line(struct client *clt, char *line)
 {
 	/* preformatted line / closing */
-	if (clt->clt_inpre) {
+	if (clt->clt_translate & TR_PRE) {
 		if (!strncmp(line, "```", 3)) {
-			clt->clt_inpre = 0;
+			clt->clt_translate &= ~TR_PRE;
 			return (clt_puts(clt, "</pre>"));
 		}
 
@@ -217,9 +217,71 @@ gemtext_translate_line(struct client *clt, char *line)
 		return (clt_putc(clt, '\n'));
 	}
 
+	/* bullet */
+	if (!strncmp(line, "* ", 2)) {
+		if (clt->clt_translate & TR_NAV) {
+			if (clt_puts(clt, "</ul></nav>") == -1)
+				return (-1);
+			clt->clt_translate &= ~TR_NAV;
+		}
+
+		if (!(clt->clt_translate & TR_LIST)) {
+			if (clt_puts(clt, "<ul>") == -1)
+				return (-1);
+			clt->clt_translate |= TR_LIST;
+		}
+
+		if (clt_puts(clt, "<li>") == -1 ||
+		    htmlescape(clt, line + 2) == -1 ||
+		    clt_puts(clt, "</li>") == -1)
+			return (-1);
+		return (0);
+	}
+
+	if (clt->clt_translate & TR_LIST) {
+		if (clt_puts(clt, "</ul>") == -1)
+			return (-1);
+		clt->clt_translate &= ~TR_LIST;
+	}
+
+	/* link -- TODO: relativify from SCRIPT_NAME */
+	if (!strncmp(line, "=>", 2)) {
+		char *label;
+
+		if (!(clt->clt_translate & TR_NAV)) {
+			if (clt_puts(clt, "<nav><ul>") == -1)
+				return (-1);
+			clt->clt_translate |= TR_NAV;
+		}
+
+		line += 2;
+		line += strspn(line, " \t");
+
+		label = line + strcspn(line, " \t");
+		if (*label == '\0')
+			label = line;
+		else
+			*label++ = '\0';
+
+		if (clt_puts(clt, "<li><a href='") == -1 ||
+		    printurl(clt, line) == -1 ||
+		    clt_puts(clt, "'>") == -1 ||
+		    htmlescape(clt, label) == -1 ||
+		    clt_puts(clt, "</a></li>") == -1)
+			return (-1);
+
+		return (0);
+	}
+
+	if (clt->clt_translate & TR_NAV) {
+		if (clt_puts(clt, "</ul></nav>") == -1)
+			return (-1);
+		clt->clt_translate &= ~TR_NAV;
+	}
+
 	/* pre opening */
 	if (!strncmp(line, "```", 3)) {
-		clt->clt_inpre = 1;
+		clt->clt_translate |= TR_PRE;
 		return (clt_puts(clt, "<pre>"));
 	}
 
@@ -255,42 +317,12 @@ gemtext_translate_line(struct client *clt, char *line)
 		return (0);
 	}
 
-	/* bullet -- XXX: group */
-	if (!strncmp(line, "* ", 2)) {
-		if (clt_puts(clt, "<ul><li>") == -1 ||
-		    htmlescape(clt, line + 2) == -1 ||
-		    clt_puts(clt, "</li></ul>") == -1)
-			return (-1);
-		return (0);
-	}
-
-	/* link -- XXX: group -- XXX: relativify from SCRIPT_NAME */
-	if (!strncmp(line, "=>", 2)) {
-		char *label;
-
-		line += 2;
-		line += strspn(line, " \t");
-
-		label = line + strcspn(line, " \t");
-		if (*label == '\0')
-			label = line;
-		else
-			*label++ = '\0';
-
-		if (clt_puts(clt, "<p><a href='") == -1 ||
-		    printurl(clt, line) == -1 ||
-		    clt_puts(clt, "'>") == -1 ||
-		    htmlescape(clt, label) == -1 ||
-		    clt_puts(clt, "</a></p>") == -1)
-			return (-1);
-		return (0);
-	}
-
 	/* paragraph */
 	if (clt_puts(clt, "<p>") == -1 ||
 	    htmlescape(clt, line) == -1 ||
 	    clt_puts(clt, "</p>") == -1)
 		return (-1);
+
 	return (0);
 }
 
@@ -304,7 +336,7 @@ proxy_translate_gemtext(struct client *clt)
 	int			 r;
 
 	for (;;) {
-		line = evbuffer_readln(src, &len, EVBUFFER_EOL_ANY);
+		line = evbuffer_readln(src, &len, EVBUFFER_EOL_CRLF);
 		if (line == NULL)
 			return;
 
@@ -553,7 +585,7 @@ proxy_read(struct bufferevent *bev, void *d)
 
 	if (!strncmp(&hdr[3], "text/gemini", 11)) {
 		ctype = "text/html; charset=utf8";
-		clt->clt_translate = 1;
+		clt->clt_translate = TR_ENABLED;
 	} else
 		ctype = &hdr[3];
 
