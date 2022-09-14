@@ -3,8 +3,7 @@ PROG =		galileo
 SRCS =		galileo.c config.c fcgi.c log.c parse.y proc.c proxy.c \
 		xmalloc.c
 
-# XXX
-NOMAN =		Yes
+MAN =		${PROG}.conf.5 ${PROG}.8
 
 # debug
 CFLAGS +=	-O0 -g3
