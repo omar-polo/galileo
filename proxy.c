@@ -780,7 +780,7 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 		    htmlescape(clt, clt->clt_pc->proxy_name) == -1 ||
 		    htmlescape(clt, clt->clt_path_info) == -1 ||
 		    clt_puts(clt, "</a></dd>") == -1 ||
-		    clt_puts(clt, "</footer>") == -1)
+		    clt_puts(clt, "</dl></footer>") == -1)
 			return;
 		if (clt_puts(clt, "</body></html>") == -1)
 			return;
