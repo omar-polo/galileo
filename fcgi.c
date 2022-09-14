@@ -342,12 +342,17 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			evbuffer_remove(src, &path, vlen);
 			path[vlen] = '\0';
 
-			if (vlen == 0)
-				(void) strlcpy(path, "/", sizeof(path));
-
 			free(clt->clt_path_info);
-			if ((clt->clt_path_info = strdup(path)) == NULL)
+			clt->clt_path_info = NULL;
+
+			if (*path != '/')
+				asprintf(&clt->clt_path_info, "/%s", path);
+			else
+				clt->clt_path_info = strdup(path);
+
+			if (clt->clt_path_info == NULL)
 				return (-1);
+
 			log_debug("clt %d: path_info: %s", clt->clt_id,
 			    clt->clt_path_info);
 			continue;
