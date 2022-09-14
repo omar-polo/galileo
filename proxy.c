@@ -510,6 +510,7 @@ void
 proxy_read(struct bufferevent *bev, void *d)
 {
 	struct client		*clt = d;
+	struct proxy_config	*pc = clt->clt_pc;
 	struct evbuffer		*src = EVBUFFER_INPUT(bev);
 	const char		*ctype;
 	char			*hdr;
@@ -564,8 +565,14 @@ proxy_read(struct bufferevent *bev, void *d)
 	clt->clt_headersdone = 1;
 
 	if (clt->clt_translate) {
-		if (clt_puts(clt, "<!doctype html>"
-		    "<html><head></head><body>") == -1)
+		if (clt_puts(clt, "<!doctype html><html><head>") == -1)
+			return;
+		log_debug("stylesheet is %s", pc->stylesheet);
+		if (*pc->stylesheet != '\0' &&
+		    clt_printf(clt, "<link rel='stylesheet' href='%s' />",
+		    pc->stylesheet) == -1)
+			return;
+		if (clt_puts(clt, "</head><body>") == -1)
 			return;
 	}
 

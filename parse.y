@@ -206,7 +206,15 @@ serveroptsl	: PROXY STRING	{
 			/* ... */
 		}
 		| PROXY '{' optnl proxyopts_l '}'
-		| STYLESHEET string { /* ... */ }
+		| STYLESHEET string {
+			size_t n;
+
+			n = strlcpy(srv->srv_conf.stylesheet, $2,
+			    sizeof(srv->srv_conf.stylesheet));
+			if (n >= sizeof(srv->srv_conf.stylesheet))
+				yyerror("stylesheet path too long!");
+			free($2);
+		}
 		;
 
 proxyopts_l	: proxyopts_l proxyoptsl nl
