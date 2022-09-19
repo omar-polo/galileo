@@ -233,8 +233,20 @@ gemtext_translate_line(struct client *clt, char *line)
 			clt->clt_translate |= TR_NAV;
 		}
 
-		if (clt_puts(clt, "<li><a href='") == -1 ||
-		    tp_urlescape(clt->clt_tp, line) == -1 ||
+		if (clt_puts(clt, "<li><a href='") == -1)
+			return (-1);
+
+		/* XXX: do proper parsing */
+		if (*line == '/' || strstr(line, "//") == NULL) {
+			if (tp_urlescape(clt->clt_tp,
+			    clt->clt_script_name) == -1)
+				return (-1);
+
+			/* skip the first / */
+			line++;
+		}
+
+		if (tp_urlescape(clt->clt_tp, line) == -1 ||
 		    clt_puts(clt, "'>") == -1 ||
 		    tp_htmlescape(clt->clt_tp, label) == -1 ||
 		    clt_puts(clt, "</a></li>") == -1)
