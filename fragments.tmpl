@@ -1,0 +1,76 @@
+{!
+/*
+ * Copyright (c) 2022 Omar Polo <op@omarpolo.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#include <sys/queue.h>
+#include <sys/tree.h>
+
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <event.h>
+#include <limits.h>
+#include <stdint.h>
+
+#include "galileo.h"
+
+!}
+
+{{ define tp_head(struct template *tp, const char *lang,
+    const char *stylesheet) }}
+<!doctype html>
+<html{{ if *lang != '\0' }}lang="{{ lang }}"{{ end }}>
+	<head>
+		<meta name="viewport" content="initial-scale=1" />
+		{{ if *stylesheet != '\0' }}
+		<link rel="stylesheet" href="{{ stylesheet|urlescape }}" />
+		{{ end }}
+	</head>
+	<body>
+{{ end }}
+
+{{ define tp_foot(struct template *tp) }}
+	{! struct client *clt = tp->tp_arg; !}
+	{! struct proxy_config *pc = clt->clt_pc; !}
+	{! const char *host = pc->proxy_name; !}
+	{! const char *path = clt->clt_path_info; !}
+
+		<footer>
+			<hr />
+			<dl>
+				<dt>Original URL:</dt>
+				<dd>
+<a href="gemini://{{ host | urlescape }}{{ path | urlescape }}">
+gemini://{{ host }}{{ path }}
+</a>
+				</dd>
+			</dl>
+		</footer>
+	</body>
+</html>
+{{ end }}
+
+{{ define tp_figure(struct template *tp, const char *url,
+    const char *label) }}
+<figure>
+	<a href="{{ url | urlescape }}">
+		<img src="{{ url }}" />
+	</a>
+	<figcaption>
+		{{ label }}
+	</figcaption>
+</figure>
+{{ end }}
