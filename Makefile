@@ -1,14 +1,19 @@
+.PATH:${.CURDIR}/template/
+
 PROG =		galileo
 
 SRCS =		galileo.c config.c fcgi.c log.c parse.y proc.c proxy.c \
-		xmalloc.c
+		tmpl.c xmalloc.c
+
+# templates
+SRCS +=		fragments.c
 
 MAN =		${PROG}.conf.5 ${PROG}.8
 
 # debug
 CFLAGS +=	-O0 -g3
 
-CFLAGS +=	-I${.CURDIR}
+CFLAGS +=	-I${.CURDIR} -I${.CURDIR}/template
 
 WARNINGS =	yes
 
@@ -24,6 +29,9 @@ DPADD =		${LIBEVENT} ${LIBTLS} ${LIBUTIL}
 PREFIX?=	/usr/local
 SBINDIR?=	${PREFIX}/sbin
 MANDIR?=	${PREFIX}/man/man
+
+fragments.c: fragments.tmpl
+	${.CURDIR}/template/obj/template $? > $@
 
 realinstall:
 	${INSTALL} ${INSTALL_COPY} -o ${BINOWN} -g ${BINGRP} \

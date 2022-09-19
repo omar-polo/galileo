@@ -41,6 +41,7 @@
 
 #include "log.h"
 #include "proc.h"
+#include "tmpl.h"
 
 #include "galileo.h"
 
@@ -270,13 +271,7 @@ gemtext_translate_line(struct client *clt, char *line)
 				clt->clt_translate &= ~TR_NAV;
 			}
 
-			if (clt_puts(clt, "<figure><a href='") == -1 ||
-			    printurl(clt, line) == -1 ||
-			    clt_puts(clt, "'><img src='") == -1 ||
-			    printurl(clt, line) == -1 ||
-			    clt_puts(clt, "' /></a><figcaption>") == -1 ||
-			    htmlescape(clt, label) == -1 ||
-			    clt_puts(clt, "</figcaption></figure>") == -1)
+			if (tp_figure(clt->clt_tp, line, label) == -1)
 				return (-1);
 
 			return (0);
@@ -612,6 +607,30 @@ parse_mime(struct client *clt, char *mime, char *lang, size_t len)
 	return (0);
 }
 
+static int
+proxy_tp_puts(struct template *tp, const char *c)
+{
+	struct client		*clt = tp->tp_arg;
+
+	if (clt_puts(clt, c) == -1) {
+		tp->tp_ret = -1;
+		return (-1);
+	}
+	return (0);
+}
+
+static int
+proxy_tp_putc(struct template *tp, int c)
+{
+	struct client		*clt = tp->tp_arg;
+
+	if (clt_putc(clt, c) == -1) {
+		tp->tp_ret = -1;
+		return (-1);
+	}
+	return (0);
+}
+
 void
 proxy_read(struct bufferevent *bev, void *d)
 {
@@ -683,9 +702,11 @@ proxy_read(struct bufferevent *bev, void *d)
 		goto err;
 	}
 
-	if (clt->clt_translate)
+	if (clt->clt_translate) {
+		clt->clt_tp = template(clt, proxy_tp_puts, proxy_tp_putc);
+
 		ctype = "text/html;charset=utf-8";
-	else
+	} else
 		ctype = mime;
 
 	if (clt_printf(clt, "Content-Type: %s\r\n\r\n", ctype) == -1)
@@ -693,28 +714,9 @@ proxy_read(struct bufferevent *bev, void *d)
 
 	clt->clt_headersdone = 1;
 
-	if (clt->clt_translate) {
-		if (clt_puts(clt, "<!doctype html><html") == -1)
-			goto err;
-		if (*lang != '\0') {
-			if (clt_puts(clt, " lang='") == -1 ||
-			    printurl(clt, lang) == -1 ||
-			    clt_puts(clt, "'") == -1)
-				goto err;
-		}
-		if (clt_puts(clt, "><head>") == -1)
-			goto err;
-		if (*pc->stylesheet != '\0' &&
-		    clt_printf(clt, "<link rel='stylesheet' href='%s' />",
-		    pc->stylesheet) == -1)
-			goto err;
-		if (clt_puts(clt,
-		    "<meta name='viewport' content='initial-scale=1' />")
-		    == -1)
-			goto err;
-		if (clt_puts(clt, "</head><body>") == -1)
-			goto err;
-	}
+	if (clt->clt_translate &&
+	    tp_head(clt->clt_tp, lang, pc->stylesheet) == -1)
+		goto err;
 
 	/*
 	 * Trigger the read again so we proceed with the response
@@ -769,20 +771,7 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 			clt->clt_translate &= ~TR_NAV;
 		}
 
-		if (clt_puts(clt, "<footer>") == -1 ||
-		    clt_puts(clt, "<hr />") == -1 ||
-		    clt_puts(clt, "<dl>") == -1 ||
-		    clt_puts(clt, "<dt>Original URL:</dt>") == -1 ||
-		    clt_puts(clt, "<dd><a href='gemini://") == -1 ||
-		    printurl(clt, clt->clt_pc->proxy_name) == -1 ||
-		    printurl(clt, clt->clt_path_info) == -1 ||
-		    clt_puts(clt, "'>gemini://") == -1 ||
-		    htmlescape(clt, clt->clt_pc->proxy_name) == -1 ||
-		    htmlescape(clt, clt->clt_path_info) == -1 ||
-		    clt_puts(clt, "</a></dd>") == -1 ||
-		    clt_puts(clt, "</dl></footer>") == -1)
-			return;
-		if (clt_puts(clt, "</body></html>") == -1)
+		if (tp_foot(clt->clt_tp) == -1)
 			return;
 	}
 
@@ -930,6 +919,7 @@ proxy_client_free(struct client *clt)
 	if (clt->clt_bev)
 		bufferevent_free(clt->clt_bev);
 
+	free(clt->clt_tp);
 	free(clt->clt_server_name);
 	free(clt->clt_script_name);
 	free(clt->clt_path_info);

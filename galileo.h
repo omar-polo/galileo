@@ -47,6 +47,7 @@ struct proxy_config;
 struct imsg;
 struct privsep;
 struct privsep_proc;
+struct template;
 struct tls;
 
 struct client {
@@ -65,6 +66,7 @@ struct client {
 	struct tls		*clt_ctx;
 	struct bufferevent	*clt_bev;
 	int			 clt_headersdone;
+	struct template		*clt_tp;
 
 #define TR_ENABLED	0x1
 #define TR_PRE		0x2
@@ -157,6 +159,11 @@ int	 clt_printf(struct client *, const char *, ...)
 	     __attribute__((__nonnull__(2)));
 int	 fcgi_cmp(struct fcgi *, struct fcgi *);
 int	 fcgi_client_cmp(struct client *, struct client *);
+
+/* fragments.tmpl */
+int	 tp_head(struct template *, const char *, const char *);
+int	 tp_foot(struct template *);
+int	 tp_figure(struct template *, const char *, const char *);
 
 /* galileo.c */
 int	 accept_reserve(int, struct sockaddr *, socklen_t *, int,
