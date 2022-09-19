@@ -154,56 +154,6 @@ proxy_dispatch_parent(int fd, struct privsep_proc *p, struct imsg *imsg)
 	return (0);
 }
 
-static inline int
-printurl(struct client *clt, const char *str)
-{
-	for (; *str; ++str) {
-		switch (*str) {
-		case ' ':
-		case '\t':
-		case '\'':
-		case '\\':
-			if (clt_printf(clt, "%2X", (unsigned char)*str) == -1)
-				return (-1);
-			break;
-		default:
-			if (clt_putc(clt, *str) == -1)
-				return (-1);
-			break;
-		}
-	}
-
-	return (0);
-}
-
-static inline int
-htmlescape(struct client *clt, const char *str)
-{
-	int r;
-
-	for (; *str; ++str) {
-		switch (*str) {
-		case '<':
-			r = clt_puts(clt, "&lt;");
-			break;
-		case '>':
-			r = clt_puts(clt, "&gt;");
-			break;
-		case '&':
-			r = clt_puts(clt, "&amp;");
-			break;
-		default:
-			r = clt_putc(clt, *str);
-			break;
-		}
-
-		if (r == -1)
-			return (-1);
-	}
-
-	return (0);
-}
-
 static int
 gemtext_translate_line(struct client *clt, char *line)
 {
@@ -214,7 +164,7 @@ gemtext_translate_line(struct client *clt, char *line)
 			return (clt_puts(clt, "</pre>"));
 		}
 
-		if (htmlescape(clt, line) == -1)
+		if (tp_htmlescape(clt->clt_tp, line) == -1)
 			return (-1);
 		return (clt_putc(clt, '\n'));
 	}
@@ -234,7 +184,7 @@ gemtext_translate_line(struct client *clt, char *line)
 		}
 
 		if (clt_puts(clt, "<li>") == -1 ||
-		    htmlescape(clt, line + 2) == -1 ||
+		    tp_htmlescape(clt->clt_tp, line + 2) == -1 ||
 		    clt_puts(clt, "</li>") == -1)
 			return (-1);
 		return (0);
@@ -284,9 +234,9 @@ gemtext_translate_line(struct client *clt, char *line)
 		}
 
 		if (clt_puts(clt, "<li><a href='") == -1 ||
-		    printurl(clt, line) == -1 ||
+		    tp_urlescape(clt->clt_tp, line) == -1 ||
 		    clt_puts(clt, "'>") == -1 ||
-		    htmlescape(clt, label) == -1 ||
+		    tp_htmlescape(clt->clt_tp, label) == -1 ||
 		    clt_puts(clt, "</a></li>") == -1)
 			return (-1);
 
@@ -308,7 +258,7 @@ gemtext_translate_line(struct client *clt, char *line)
 	/* citation block */
 	if (*line == '>') {
 		if (clt_puts(clt, "<blockquote>") == -1 ||
-		    htmlescape(clt, line + 1) == -1 ||
+		    tp_htmlescape(clt->clt_tp, line + 1) == -1 ||
 		    clt_puts(clt, "</blockquote>") == -1)
 			return (-1);
 		return (0);
@@ -317,21 +267,21 @@ gemtext_translate_line(struct client *clt, char *line)
 	/* headings */
 	if (!strncmp(line, "###", 3)) {
 		if (clt_puts(clt, "<h3>") == -1 ||
-		    htmlescape(clt, line + 3) == -1 ||
+		    tp_htmlescape(clt->clt_tp, line + 3) == -1 ||
 		    clt_puts(clt, "</h3>") == -1)
 			return (-1);
 		return (0);
 	}
 	if (!strncmp(line, "##", 2)) {
 		if (clt_puts(clt, "<h2>") == -1 ||
-		    htmlescape(clt, line + 2) == -1 ||
+		    tp_htmlescape(clt->clt_tp, line + 2) == -1 ||
 		    clt_puts(clt, "</h2>") == -1)
 			return (-1);
 		return (0);
 	}
 	if (!strncmp(line, "#", 1)) {
 		if (clt_puts(clt, "<h1>") == -1 ||
-		    htmlescape(clt, line + 1) == -1 ||
+		    tp_htmlescape(clt->clt_tp, line + 1) == -1 ||
 		    clt_puts(clt, "</h1>") == -1)
 			return (-1);
 		return (0);
@@ -343,7 +293,7 @@ gemtext_translate_line(struct client *clt, char *line)
 
 	/* paragraph */
 	if (clt_puts(clt, "<p>") == -1 ||
-	    htmlescape(clt, line) == -1 ||
+	    tp_htmlescape(clt->clt_tp, line) == -1 ||
 	    clt_puts(clt, "</p>") == -1)
 		return (-1);
 
