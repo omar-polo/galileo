@@ -79,7 +79,7 @@ gemini://{{ host }}{{ path }}
 !}
 <figure>
 	<a href="{{ path | urlescape }}{{ url | urlescape }}">
-		<img src="{{ path | urlescape }}{{ url }}" />
+		<img src="{{ path | urlescape }}{{ url | urlescape }}" />
 	</a>
 	<figcaption>
 		{{ label }}
