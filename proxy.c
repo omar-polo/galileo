@@ -733,7 +733,8 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 			clt->clt_translate &= ~TR_NAV;
 		}
 
-		if (tp_foot(clt->clt_tp) == -1)
+		if (clt->clt_translate &&
+		    tp_foot(clt->clt_tp) == -1)
 			return;
 	}
 
