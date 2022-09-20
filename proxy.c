@@ -358,7 +358,9 @@ proxy_start_request(struct galileo *env, struct client *clt)
 	char			 port[32];
 
 	if ((clt->clt_pc = proxy_server_match(env, clt)) == NULL) {
-		if (proxy_start_reply(clt, 501, NULL) == -1)
+		if (proxy_start_reply(clt, 501, "text/html") == -1)
+			return;
+		if (tp_error(clt->clt_tp, "unknown server") == -1)
 			return;
 		fcgi_end_request(clt, 1);
 		return;
@@ -398,9 +400,9 @@ proxy_resolved(struct asr_result *res, void *d)
 		log_warnx("failed to resolve %s:%d: %s",
 		    pc->proxy_addr, pc->proxy_port,
 		    gai_strerror(res->ar_gai_errno));
-		if (proxy_start_reply(clt, 501, "text/plain") == -1)
+		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return;
-		if (clt_printf(clt, "Proxy error; connection failed") == -1)
+		if (tp_error(clt->clt_tp, "Can't resolve host") == -1)
 			return;
 		fcgi_end_request(clt, 1);
 		return;
@@ -514,9 +516,9 @@ done:
 err:
 	log_warn("failed to connect to %s:%d",
 	    clt->clt_pc->proxy_addr, clt->clt_pc->proxy_port);
-	if (proxy_start_reply(clt, 501, "text/plain") == -1)
+	if (proxy_start_reply(clt, 501, "text/html") == -1)
 		return;
-	if (clt_printf(clt, "Proxy error; connection failed") == -1)
+	if (tp_error(clt->clt_tp, "Can't connect") == -1)
 		return;
 	fcgi_end_request(clt, 1);
 }
@@ -622,7 +624,6 @@ void
 proxy_read(struct bufferevent *bev, void *d)
 {
 	struct client		*clt = d;
-	struct proxy_config	*pc = clt->clt_pc;
 	struct evbuffer		*src = EVBUFFER_INPUT(bev);
 	const char		*ctype;
 	char			 lang[16];
@@ -658,12 +659,9 @@ proxy_read(struct bufferevent *bev, void *d)
 		/* handled below */
 		break;
 	default:
-		if (proxy_start_reply(clt, 501, "text/plain") == -1)
+		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			goto err;
-		if (clt_printf(clt, "Request failed with code %c%c\n\n",
-		    hdr[0], hdr[1]) == -1)
-			goto err;
-		if (clt_printf(clt, "The server says: %s\n", &hdr[3]) == -1)
+		if (tp_error(clt->clt_tp, &hdr[3]) == -1)
 			goto err;
 		fcgi_end_request(clt, 1);
 		goto err;
@@ -671,10 +669,10 @@ proxy_read(struct bufferevent *bev, void *d)
 
 	mime = hdr + 2 + strspn(hdr + 2, " \t");
 	if (parse_mime(clt, mime, lang, sizeof(lang)) == -1) {
-		if (proxy_start_reply(clt, 501, "text/plain") == -1)
+		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			goto err;
-		if (clt_printf(clt, "Failed to parse the Gemini response\n")
-		    == -1)
+		if (tp_error(clt->clt_tp, "Bad response") == -1)
+			goto err;
 		fcgi_end_request(clt, 1);
 		goto err;
 	}
@@ -692,7 +690,7 @@ proxy_read(struct bufferevent *bev, void *d)
 	clt->clt_headersdone = 1;
 
 	if (clt->clt_translate &&
-	    tp_head(clt->clt_tp, lang, pc->stylesheet) == -1)
+	    tp_head(clt->clt_tp, lang, NULL) == -1)
 		goto err;
 
 	/*
@@ -723,9 +721,9 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 	    err);
 
 	if (!clt->clt_headersdone) {
-		if (proxy_start_reply(clt, 501, "text/plain") == -1)
+		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return;
-		if (clt_printf(clt, "Proxy error\n") == -1)
+		if (tp_error(clt->clt_tp, "Proxy error") == -1)
 			return;
 	} else if (status == 0) {
 		if (clt->clt_translate & TR_PRE) {

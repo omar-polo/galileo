@@ -31,7 +31,11 @@
 !}
 
 {{ define tp_head(struct template *tp, const char *lang,
-    const char *stylesheet) }}
+    const char *title) }}
+{! struct client *clt = tp->tp_arg; !}
+{! struct proxy_config *pc = clt->clt_pc; !}
+{! const char *stylesheet = pc->stylesheet; !}
+{! const char *path = clt->clt_path_info; !}
 <!doctype html>
 <html{{ if *lang != '\0' }}lang="{{ lang }}"{{ end }}>
 	<head>
@@ -39,6 +43,13 @@
 		{{ if *stylesheet != '\0' }}
 		<link rel="stylesheet" href="{{ stylesheet|urlescape }}" />
 		{{ end }}
+		<title>
+			{{ if title }}
+				{{ title }}
+			{{ else }}
+				gemini://{{ pc->proxy_name }}{{ path }}
+			{{ end }}
+		</title>
 	</head>
 	<body>
 {{ end }}
@@ -85,4 +96,14 @@ gemini://{{ host }}{{ path }}
 		{{ label }}
 	</figcaption>
 </figure>
+{{ end }}
+
+{{ define tp_error(struct template *tp, const char *reason) }}
+	{{ render tp_head(tp, "en", "Proxy error") }}
+	<main>
+		<h1>Proxy error</h1>
+		<p>Unable to serve the page due to:</p>
+		<pre>{{ reason }}</pre>
+	</main>
+	{{ render tp_foot(tp) }}
 {{ end }}
