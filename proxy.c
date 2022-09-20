@@ -58,6 +58,7 @@ int	proxy_dispatch_parent(int, struct privsep_proc *, struct imsg *);
 void	proxy_translate_gemtext(struct client *);
 void	proxy_resolved(struct asr_result *, void *);
 void	proxy_connect(int, short, void *);
+int	proxy_start_reply(struct client *, int, const char *);
 void	proxy_read(struct bufferevent *, void *);
 void	proxy_write(struct bufferevent *, void *);
 void	proxy_error(struct bufferevent *, short, void *);
@@ -357,7 +358,7 @@ proxy_start_request(struct galileo *env, struct client *clt)
 	char			 port[32];
 
 	if ((clt->clt_pc = proxy_server_match(env, clt)) == NULL) {
-		if (clt_printf(clt, "Status: 501\r\n\r\n") == -1)
+		if (proxy_start_reply(clt, 501, NULL) == -1)
 			return;
 		fcgi_end_request(clt, 1);
 		return;
@@ -397,9 +398,7 @@ proxy_resolved(struct asr_result *res, void *d)
 		log_warnx("failed to resolve %s:%d: %s",
 		    pc->proxy_addr, pc->proxy_port,
 		    gai_strerror(res->ar_gai_errno));
-		if (clt_printf(clt, "Status: 501\r\n") == -1)
-			return;
-		if (clt_printf(clt, "Content-Type: text/plain\r\n") == -1)
+		if (proxy_start_reply(clt, 501, "text/plain") == -1)
 			return;
 		if (clt_printf(clt, "Proxy error; connection failed") == -1)
 			return;
@@ -515,9 +514,7 @@ done:
 err:
 	log_warn("failed to connect to %s:%d",
 	    clt->clt_pc->proxy_addr, clt->clt_pc->proxy_port);
-	if (clt_printf(clt, "Status: 501\r\n") == -1)
-		return;
-	if (clt_printf(clt, "Content-Type: text/plain\r\n") == -1)
+	if (proxy_start_reply(clt, 501, "text/plain") == -1)
 		return;
 	if (clt_printf(clt, "Proxy error; connection failed") == -1)
 		return;
@@ -593,6 +590,34 @@ proxy_tp_putc(struct template *tp, int c)
 	return (0);
 }
 
+int
+proxy_start_reply(struct client *clt, int status, const char *ctype)
+{
+	const char	*csp;
+
+	csp = "Content-Security-Policy: default-src 'self'; "
+	    "script-src 'none'; object-src 'none';\r\n";
+
+	if (ctype != NULL && !strcmp(ctype, "text/html"))
+		ctype = "text/html;charset=utf-8";
+
+	if (status != 200 &&
+	    ctl_printf(ctl, "Status: %d\r\n", status) == -1)
+		return (-1);
+
+	if (ctype != NULL &&
+	    clt_printf(clt, "Content-Type: %s\r\n", ctype) == -1)
+		return (-1);
+
+	if (clt_puts(clt, cps) == -1)
+		return (-1);
+
+	if (clt_puts(clt, "\r\n") == -1)
+		return (-1);
+
+	return (0);
+}
+
 void
 proxy_read(struct bufferevent *bev, void *d)
 {
@@ -633,12 +658,7 @@ proxy_read(struct bufferevent *bev, void *d)
 		/* handled below */
 		break;
 	default:
-		if (clt_puts(clt, "Status: 501\r\n") == -1)
-			goto err;
-		if (clt_puts(clt,
-		    "Content-Type: text/plain;charset=utf-8\r\n") == -1)
-			goto err;
-		if (clt_puts(clt, "\r\n") == -1)
+		if (proxy_start_reply(clt, 501, "text/plain") == -1)
 			goto err;
 		if (clt_printf(clt, "Request failed with code %c%c\n\n",
 		    hdr[0], hdr[1]) == -1)
@@ -651,12 +671,7 @@ proxy_read(struct bufferevent *bev, void *d)
 
 	mime = hdr + 2 + strspn(hdr + 2, " \t");
 	if (parse_mime(clt, mime, lang, sizeof(lang)) == -1) {
-		if (clt_puts(clt, "Status: 501\r\n") == -1)
-			goto err;
-		if (clt_puts(clt,
-		    "Content-Type: text/plain;charset=utf-8\r\n") == -1)
-			goto err;
-		if (clt_puts(clt, "\r\n") == -1)
+		if (proxy_start_reply(clt, 501, "text/plain") == -1)
 			goto err;
 		if (clt_printf(clt, "Failed to parse the Gemini response\n")
 		    == -1)
@@ -708,9 +723,7 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 	    err);
 
 	if (!clt->clt_headersdone) {
-		if (clt_printf(clt, "Status: 501\r\n") == -1)
-			return;
-		if (clt_printf(clt, "Content-Type: text/plain\r\n") == -1)
+		if (proxy_start_reply(clt, 501, "text/plain") == -1)
 			return;
 		if (clt_printf(clt, "Proxy error\n") == -1)
 			return;
