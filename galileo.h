@@ -28,6 +28,7 @@
 #define PROC_MAX_INSTANCES	32
 #define PROXY_NUMPROC		3
 #define PROC_PARENT_SOCK_FILENO	3
+#define GEMINI_MAXLEN		(1024 + 1) /* NULL */
 
 enum {
 	IMSG_NONE,
@@ -57,6 +58,7 @@ struct client {
 	char			*clt_server_name;
 	char			*clt_script_name;
 	char			*clt_path_info;
+	char			*clt_query;
 	struct proxy_config	*clt_pc;
 	struct event_asr	*clt_evasr;
 	struct addrinfo		*clt_addrinfo;

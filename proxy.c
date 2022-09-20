@@ -505,9 +505,20 @@ done:
 	bufferevent_enable(clt->clt_bev, EV_READ|EV_WRITE);
 
 	/* TODO: compute the URL */
-	if (evbuffer_add_printf(out, "gemini://%s/%s\r\n",
+	if (evbuffer_add_printf(out, "gemini://%s/%s",
 	    clt->clt_pc->proxy_name, clt->clt_path_info) == -1) {
 		log_warn("bufferevent_printf failed");
+		goto err;
+	}
+
+	if (clt->clt_query &&
+	    evbuffer_add_printf(out, "?%s", clt->clt_query) == -1) {
+		log_warn("bufferevent_printf failed");
+		goto err;
+	}
+
+	if (evbuffer_add(out, "\r\n", 2) == -1) {
+		log_warn("bufferevent_add failed");
 		goto err;
 	}
 
@@ -874,5 +885,6 @@ proxy_client_free(struct client *clt)
 	free(clt->clt_server_name);
 	free(clt->clt_script_name);
 	free(clt->clt_path_info);
+	free(clt->clt_query);
 	free(clt);
 }

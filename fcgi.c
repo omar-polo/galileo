@@ -288,6 +288,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 	char			 pname[32];
 	char			 server[HOST_NAME_MAX + 1];
 	char			 path[PATH_MAX];
+	char			 query[GEMINI_MAXLEN];
 	int			 nlen, vlen;
 
 	while (fcgi->fcg_toread > 0) {
@@ -364,6 +365,21 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 
 			log_debug("clt %d: path_info: %s", clt->clt_id,
 			    clt->clt_path_info);
+			continue;
+		}
+
+		if (!strcmp(pname, "QUERY_STRING") &&
+		    (size_t)vlen < sizeof(query) &&
+		    vlen > 0) {
+			fcgi->fcg_toread -= vlen;
+			evbuffer_remove(src, &query, vlen);
+
+			free(clt->clt_query);
+			if ((clt->clt_query = strdup(query)) == NULL)
+				return (-1);
+
+			log_debug("clt %d: query: %s", clt->clt_id,
+			    clt->clt_query);
 			continue;
 		}
 
