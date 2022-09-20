@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include "log.h"
+#include "tmpl.h"
 
 #include "galileo.h"
 
@@ -477,6 +478,13 @@ fcgi_read(struct bufferevent *bev, void *d)
 				break;
 			}
 
+			clt->clt_tp = template(clt, clt_tp_puts, clt_tp_putc);
+			if (clt->clt_tp == NULL) {
+				free(clt);
+				log_warn("template");
+				break;
+			}
+
 			clt->clt_id = fcgi->fcg_rec_id;
 			clt->clt_fd = -1;
 			clt->clt_fcgi = fcgi;
@@ -677,6 +685,32 @@ clt_printf(struct client *clt, const char *fmt, ...)
 }
 
 int
+clt_tp_puts(struct template *tp, const char *str)
+{
+	struct client		*clt = tp->tp_arg;
+
+	if (clt_puts(clt, str) == -1) {
+		tp->tp_ret = -1;
+		return (-1);
+	}
+
+	return (0);
+}
+
+int
+clt_tp_putc(struct template *tp, int c)
+{
+	struct client		*clt = tp->tp_arg;
+
+	if (clt_putc(clt, c) == -1) {
+		tp->tp_ret = -1;
+		return (-1);
+	}
+
+	return (0);
+}
+
+int
 fcgi_cmp(struct fcgi *a, struct fcgi *b)
 {
 	return ((int)a->fcg_id - b->fcg_id);
@@ -690,4 +724,3 @@ fcgi_client_cmp(struct client *a, struct client *b)
 
 SPLAY_GENERATE(fcgi_tree, fcgi, fcg_nodes, fcgi_cmp);
 SPLAY_GENERATE(client_tree, client, clt_nodes, fcgi_client_cmp);
-

@@ -157,6 +157,8 @@ int	 clt_write(struct client *, const uint8_t *, size_t);
 int	 clt_printf(struct client *, const char *, ...)
 	     __attribute__((__format__(printf, 2, 3)))
 	     __attribute__((__nonnull__(2)));
+int	 clt_tp_puts(struct template *, const char *);
+int	 clt_tp_putc(struct template *, int);
 int	 fcgi_cmp(struct fcgi *, struct fcgi *);
 int	 fcgi_client_cmp(struct client *, struct client *);
 

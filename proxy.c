@@ -568,30 +568,6 @@ parse_mime(struct client *clt, char *mime, char *lang, size_t len)
 	return (0);
 }
 
-static int
-proxy_tp_puts(struct template *tp, const char *c)
-{
-	struct client		*clt = tp->tp_arg;
-
-	if (clt_puts(clt, c) == -1) {
-		tp->tp_ret = -1;
-		return (-1);
-	}
-	return (0);
-}
-
-static int
-proxy_tp_putc(struct template *tp, int c)
-{
-	struct client		*clt = tp->tp_arg;
-
-	if (clt_putc(clt, c) == -1) {
-		tp->tp_ret = -1;
-		return (-1);
-	}
-	return (0);
-}
-
 int
 proxy_start_reply(struct client *clt, int status, const char *ctype)
 {
@@ -677,11 +653,9 @@ proxy_read(struct bufferevent *bev, void *d)
 		goto err;
 	}
 
-	if (clt->clt_translate) {
-		clt->clt_tp = template(clt, proxy_tp_puts, proxy_tp_putc);
-
+	if (clt->clt_translate)
 		ctype = "text/html;charset=utf-8";
-	} else
+	else
 		ctype = mime;
 
 	if (clt_printf(clt, "Content-Type: %s\r\n\r\n", ctype) == -1)
