@@ -360,7 +360,7 @@ proxy_start_request(struct galileo *env, struct client *clt)
 	if ((clt->clt_pc = proxy_server_match(env, clt)) == NULL) {
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return;
-		if (tp_error(clt->clt_tp, "unknown server") == -1)
+		if (tp_error(clt->clt_tp, -1, "unknown server") == -1)
 			return;
 		fcgi_end_request(clt, 1);
 		return;
@@ -402,7 +402,7 @@ proxy_resolved(struct asr_result *res, void *d)
 		    gai_strerror(res->ar_gai_errno));
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return;
-		if (tp_error(clt->clt_tp, "Can't resolve host") == -1)
+		if (tp_error(clt->clt_tp, -1, "Can't resolve host") == -1)
 			return;
 		fcgi_end_request(clt, 1);
 		return;
@@ -518,7 +518,7 @@ err:
 	    clt->clt_pc->proxy_addr, clt->clt_pc->proxy_port);
 	if (proxy_start_reply(clt, 501, "text/html") == -1)
 		return;
-	if (tp_error(clt->clt_tp, "Can't connect") == -1)
+	if (tp_error(clt->clt_tp, -1, "Can't connect") == -1)
 		return;
 	fcgi_end_request(clt, 1);
 }
@@ -605,6 +605,7 @@ proxy_read(struct bufferevent *bev, void *d)
 	char			 lang[16];
 	char			*hdr, *mime;
 	size_t			 len;
+	int			 code;
 
 	if (clt->clt_headersdone) {
 		if (clt->clt_translate)
@@ -630,6 +631,8 @@ proxy_read(struct bufferevent *bev, void *d)
 		goto err;
 	}
 
+	code = (hdr[0] - '0') * 10 + (hdr[1] - '0');
+
 	switch (hdr[0]) {
 	case '2':
 		/* handled below */
@@ -637,7 +640,7 @@ proxy_read(struct bufferevent *bev, void *d)
 	default:
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			goto err;
-		if (tp_error(clt->clt_tp, &hdr[3]) == -1)
+		if (tp_error(clt->clt_tp, code, &hdr[3]) == -1)
 			goto err;
 		fcgi_end_request(clt, 1);
 		goto err;
@@ -647,7 +650,7 @@ proxy_read(struct bufferevent *bev, void *d)
 	if (parse_mime(clt, mime, lang, sizeof(lang)) == -1) {
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			goto err;
-		if (tp_error(clt->clt_tp, "Bad response") == -1)
+		if (tp_error(clt->clt_tp, -1, "Bad response") == -1)
 			goto err;
 		fcgi_end_request(clt, 1);
 		goto err;
@@ -697,7 +700,7 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 	if (!clt->clt_headersdone) {
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return;
-		if (tp_error(clt->clt_tp, "Proxy error") == -1)
+		if (tp_error(clt->clt_tp, -1, "Proxy error") == -1)
 			return;
 	} else if (status == 0) {
 		if (clt->clt_translate & TR_PRE) {

@@ -24,6 +24,7 @@
 #include <event.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "galileo.h"
@@ -98,12 +99,25 @@ gemini://{{ host }}{{ path }}
 </figure>
 {{ end }}
 
-{{ define tp_error(struct template *tp, const char *reason) }}
+{{ define tp_error(struct template *tp, int code, const char *reason) }}
+{!
+	char	scode[32];
+	int	r;
+
+	r = snprintf(scode, sizeof(code), "%d", code);
+	if (r < 0 || (size_t)r >= sizeof(code))
+		return 0;
+
+!}
 	{{ render tp_head(tp, "en", "Proxy error") }}
 	<main>
 		<h1>Proxy error</h1>
-		<p>Unable to serve the page due to:</p>
-		<pre>{{ reason }}</pre>
+		{{ if code != -1 }}
+			<p>Request failed with code: <code>{{ scode }}</code>.</p>
+			<p>The server says: {{ reason }}.</p>
+		{{ else }}
+			<p>Unable to serve the page due to: {{ reason }}.</p>
+		{{ end }}
 	</main>
 	{{ render tp_foot(tp) }}
 {{ end }}

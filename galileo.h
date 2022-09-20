@@ -166,7 +166,7 @@ int	 fcgi_client_cmp(struct client *, struct client *);
 int	 tp_head(struct template *, const char *, const char *);
 int	 tp_foot(struct template *);
 int	 tp_figure(struct template *, const char *, const char *);
-int	 tp_error(struct template *, const char *);
+int	 tp_error(struct template *, int, const char *);
 
 /* galileo.c */
 int	 accept_reserve(int, struct sockaddr *, socklen_t *, int,
