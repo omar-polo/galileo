@@ -602,14 +602,14 @@ proxy_start_reply(struct client *clt, int status, const char *ctype)
 		ctype = "text/html;charset=utf-8";
 
 	if (status != 200 &&
-	    ctl_printf(ctl, "Status: %d\r\n", status) == -1)
+	    clt_printf(clt, "Status: %d\r\n", status) == -1)
 		return (-1);
 
 	if (ctype != NULL &&
 	    clt_printf(clt, "Content-Type: %s\r\n", ctype) == -1)
 		return (-1);
 
-	if (clt_puts(clt, cps) == -1)
+	if (clt_puts(clt, csp) == -1)
 		return (-1);
 
 	if (clt_puts(clt, "\r\n") == -1)
