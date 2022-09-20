@@ -289,6 +289,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 	char			 server[HOST_NAME_MAX + 1];
 	char			 path[PATH_MAX];
 	char			 query[GEMINI_MAXLEN];
+	char			 method[8];
 	int			 nlen, vlen;
 
 	while (fcgi->fcg_toread > 0) {
@@ -373,6 +374,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 		    vlen > 0) {
 			fcgi->fcg_toread -= vlen;
 			evbuffer_remove(src, &query, vlen);
+			query[vlen] = '\0';
 
 			free(clt->clt_query);
 			if ((clt->clt_query = strdup(query)) == NULL)
@@ -383,9 +385,89 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			continue;
 		}
 
+		if (!strcmp(pname, "REQUEST_METHOD") &&
+		    (size_t)vlen < sizeof(method)) {
+			fcgi->fcg_toread -= vlen;
+			evbuffer_remove(src, &method, vlen);
+			method[vlen] = '\0';
+
+			if (!strcasecmp(method, "GET"))
+				clt->clt_method = METHOD_GET;
+			if (!strcasecmp(method, "POST"))
+				clt->clt_method = METHOD_POST;
+
+			continue;
+		}
+
 		fcgi->fcg_toread -= vlen;
 		evbuffer_drain(src, vlen);
 	}
+
+	return (0);
+}
+
+static int
+fcgi_parse_form(struct fcgi *fcgi, struct client *clt, struct evbuffer *src)
+{
+	char			*a, *s;
+	char			 tmp[2048];
+	size_t			 len;
+
+	if (fcgi->fcg_toread == 0) {
+		clt->clt_bodydone = 1;
+		return (proxy_start_request(fcgi->fcg_env, clt));
+	}
+
+	len = sizeof(tmp) - 1;
+	if (len > (size_t)fcgi->fcg_toread)
+		len = fcgi->fcg_toread;
+
+	fcgi->fcg_toread -= len;
+	evbuffer_remove(src, &tmp, len);
+	tmp[len] = '\0';
+
+	if (clt->clt_bodydone)
+		return (0);
+
+	if (clt->clt_bodylen > GEMINI_MAXLEN) {
+		free(clt->clt_body);
+		clt->clt_body = NULL;
+		return (0);
+	}
+
+	if (clt->clt_body != NULL) {
+		if ((a = strchr(tmp, '&')) != NULL ||
+		    (a = strchr(tmp, '\r')) != NULL) {
+			*a = '\0';
+			clt->clt_bodydone = 1;
+		}
+
+		a = clt->clt_body;
+		if (asprintf(&clt->clt_body, "%s%s", a, tmp) == -1) {
+			free(a);
+			clt->clt_body = NULL;
+			return (0);
+		}
+		clt->clt_bodylen += strlen(tmp);
+		return (0);
+	}
+
+	if (clt->clt_bodylen != 0)
+		return (0); /* EOM situation */
+
+	if ((s = strstr(tmp, "q=")) == NULL)
+		return (0);
+	s += 2;
+
+	if ((a = strchr(s, '&')) != NULL ||
+	    (a = strchr(s, '\r')) != NULL) {
+		*a = '\0';
+		clt->clt_bodydone = 1;
+	}
+
+	clt->clt_bodylen = strlen(s);
+	if ((clt->clt_body = strdup(s)) == NULL)
+		return (0);
 
 	return (0);
 }
@@ -515,7 +597,11 @@ fcgi_read(struct bufferevent *bev, void *d)
 			}
 			if (fcgi->fcg_toread == 0) {
 				evbuffer_drain(src, fcgi->fcg_toread);
-				proxy_start_request(env, clt);
+				if (clt->clt_method == METHOD_GET) {
+					if (proxy_start_request(env, clt)
+					    == -1)
+						return;
+				}
 				break;
 			}
 			if (fcgi_parse_params(fcgi, src, clt) == -1) {
@@ -525,8 +611,13 @@ fcgi_read(struct bufferevent *bev, void *d)
 			}
 			break;
 		case FCGI_STDIN:
-			/* ignore */
-			evbuffer_drain(src, fcgi->fcg_toread);
+			if (clt == NULL ||
+			    clt->clt_method != METHOD_POST) {
+				evbuffer_drain(src, fcgi->fcg_toread);
+				break;
+			}
+			if (fcgi_parse_form(fcgi, clt, src) == -1)
+				return;
 			break;
 		case FCGI_ABORT_REQUEST:
 			if (clt == NULL) {

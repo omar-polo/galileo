@@ -29,6 +29,13 @@
 #define PROXY_NUMPROC		3
 #define PROC_PARENT_SOCK_FILENO	3
 #define GEMINI_MAXLEN		(1024 + 1) /* NULL */
+#define FORM_URLENCODED		"application/x-www-form-urlencoded"
+
+enum {
+	METHOD_UNKNOWN,
+	METHOD_GET,
+	METHOD_POST,
+};
 
 enum {
 	IMSG_NONE,
@@ -59,6 +66,10 @@ struct client {
 	char			*clt_script_name;
 	char			*clt_path_info;
 	char			*clt_query;
+	int			 clt_method;
+	int			 clt_bodydone;
+	char			*clt_body;
+	int			 clt_bodylen;
 	struct proxy_config	*clt_pc;
 	struct event_asr	*clt_evasr;
 	struct addrinfo		*clt_addrinfo;
@@ -169,6 +180,7 @@ int	 tp_head(struct template *, const char *, const char *);
 int	 tp_foot(struct template *);
 int	 tp_figure(struct template *, const char *, const char *);
 int	 tp_error(struct template *, int, const char *);
+int	 tp_inputpage(struct template *, const char *);
 
 /* galileo.c */
 int	 accept_reserve(int, struct sockaddr *, socklen_t *, int,
@@ -183,7 +195,7 @@ extern uint32_t proxy_fcg_id;
 
 void	 proxy(struct privsep *, struct privsep_proc *);
 void	 proxy_purge(struct server *);
-void	 proxy_start_request(struct galileo *, struct client *);
+int	 proxy_start_request(struct galileo *, struct client *);
 void	 proxy_client_free(struct client *);
 
 SPLAY_PROTOTYPE(fcgi_tree, fcgi, fcg_nodes, fcgi_cmp);

@@ -121,3 +121,15 @@ gemini://{{ host }}{{ path }}
 	</main>
 	{{ render tp_foot(tp) }}
 {{ end }}
+
+{{ define tp_inputpage(struct template *tp, const char *prompt) }}
+	{{ render tp_head(tp, "en", "input request") }}
+	<p>The server ask for input: {{ prompt }}</p>
+	<form method="post" enctype="{{ FORM_URLENCODED }}">
+		<label for="reply">
+			<span>response </span>
+		</label>
+		<input type="text" value="" id="reply" name="q" />
+	</form>
+{{ render tp_foot(tp) }}
+{{ end }}

@@ -350,20 +350,43 @@ proxy_server_match(struct galileo *env, struct client *clt)
 	return NULL;
 }
 
-void
+int
 proxy_start_request(struct galileo *env, struct client *clt)
 {
 	struct addrinfo		 hints;
 	struct asr_query	*query;
-	char			 port[32];
+	int			 r;
+	char			*url, port[32];
 
 	if ((clt->clt_pc = proxy_server_match(env, clt)) == NULL) {
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
-			return;
+			return (-1);
 		if (tp_error(clt->clt_tp, -1, "unknown server") == -1)
-			return;
-		fcgi_end_request(clt, 1);
-		return;
+			return (-1);
+		return (fcgi_end_request(clt, 1));
+	}
+
+	if (clt->clt_bodylen != 0 && clt->clt_body == NULL) {
+		if (proxy_start_reply(clt, 400, "text/html") == -1)
+			return (-1);
+		if (tp_error(clt->clt_tp, -1, "bad request") == -1)
+			return (-1);
+		return (fcgi_end_request(clt, 1));
+	}
+
+	if (clt->clt_body) {
+		r = asprintf(&url, "%s%s?%s", clt->clt_script_name,
+		    clt->clt_path_info + 1, clt->clt_body);
+		if (r == -1)
+			return (fcgi_end_request(clt, 1));
+
+		if (proxy_start_reply(clt, 302, url) == -1 ||
+		    fcgi_end_request(clt, 1) == -1) {
+			free(url);
+			return (-1);
+		}
+		free(url);
+		return (0);
 	}
 
 	(void)snprintf(port, sizeof(port), "%d", clt->clt_pc->proxy_port);
@@ -375,17 +398,17 @@ proxy_start_request(struct galileo *env, struct client *clt)
 	query = getaddrinfo_async(clt->clt_pc->proxy_addr, port, &hints, NULL);
 	if (query == NULL) {
 		log_warn("getaddrinfo_async");
-		fcgi_abort_request(clt);
-		return;
+		return (fcgi_abort_request(clt));
 	}
 
 	clt->clt_evasr = event_asr_run(query, proxy_resolved, clt);
 	if (clt->clt_evasr == NULL) {
 		log_warn("event_asr_run");
 		asr_abort(query);
-		fcgi_abort_request(clt);
-		return;
+		return (fcgi_abort_request(clt));
 	}
+
+	return (0);
 }
 
 void
@@ -587,19 +610,29 @@ proxy_start_reply(struct client *clt, int status, const char *ctype)
 	csp = "Content-Security-Policy: default-src 'self'; "
 	    "script-src 'none'; object-src 'none';\r\n";
 
-	if (ctype != NULL && !strcmp(ctype, "text/html"))
-		ctype = "text/html;charset=utf-8";
-
 	if (status != 200 &&
 	    clt_printf(clt, "Status: %d\r\n", status) == -1)
 		return (-1);
 
-	if (ctype != NULL &&
-	    clt_printf(clt, "Content-Type: %s\r\n", ctype) == -1)
-		return (-1);
-
 	if (clt_puts(clt, csp) == -1)
 		return (-1);
+
+	if (status == 302) {
+		/* use "ctype" as redirect target */
+		if (clt_printf(clt, "Location: %s\r\n", ctype) == -1)
+			return (-1);
+		if (clt_puts(clt, "\r\n") == -1)
+			return (-1);
+		return (0);
+	}
+
+	if (ctype != NULL) {
+		if (!strcmp(ctype, "text/html"))
+			ctype = "text/html;charset=utf-8";
+		if (clt_printf(clt, "Content-Type: %s\r\n", ctype)
+		    == -1)
+			return (-1);
+	}
 
 	if (clt_puts(clt, "\r\n") == -1)
 		return (-1);
@@ -645,6 +678,13 @@ proxy_read(struct bufferevent *bev, void *d)
 	code = (hdr[0] - '0') * 10 + (hdr[1] - '0');
 
 	switch (hdr[0]) {
+	case '1':
+		if (proxy_start_reply(clt, 200, "text/html") == -1)
+			goto err;
+		if (tp_inputpage(clt->clt_tp, &hdr[3]) == -1)
+			goto err;
+		fcgi_end_request(clt, 0);
+		goto err;
 	case '2':
 		/* handled below */
 		break;
@@ -881,6 +921,7 @@ proxy_client_free(struct client *clt)
 	if (clt->clt_bev)
 		bufferevent_free(clt->clt_bev);
 
+	free(clt->clt_body);
 	free(clt->clt_tp);
 	free(clt->clt_server_name);
 	free(clt->clt_script_name);
