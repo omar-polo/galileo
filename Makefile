@@ -30,6 +30,8 @@ PREFIX?=	/usr/local
 SBINDIR?=	${PREFIX}/sbin
 MANDIR?=	${PREFIX}/man/man
 
+SUBDIR +=	template
+
 fragments.c: fragments.tmpl
 	${.CURDIR}/template/obj/template $? > $@
 
