@@ -11,3 +11,7 @@ To compile Galileo on OpenBSD run:
 	$ make obj
 	$ make
 	$ doas make install
+
+A portable version will follow.
+
+Galileo is known to work also with nginx and lighttpd.
