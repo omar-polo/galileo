@@ -688,6 +688,24 @@ proxy_read(struct bufferevent *bev, void *d)
 	case '2':
 		/* handled below */
 		break;
+	case '3':
+		/* XXX: do proper parsing */
+		if (hdr[3] == '/' || strstr(&hdr[3], "//") == NULL) {
+			char *url;
+
+			if (asprintf(&url, "%s%s", clt->clt_script_name,
+			    &hdr[3]) == -1)
+				goto err;
+
+			if (proxy_start_reply(clt, 302, url)) {
+				free(url);
+				goto err;
+			}
+			free(url);
+			fcgi_end_request(clt, 0);
+			goto err;
+		}
+		/* fallback */
 	default:
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			goto err;
