@@ -189,9 +189,13 @@ proxy		: PROXY STRING {
 			free($2);
 
 			pr = p;
-			TAILQ_INSERT_TAIL(&conf->sc_proxies, p, pr_entry);
 		} '{' optnl proxyopts_l '}' {
 			/* check if duplicate */
+			if (proxy_match(conf, pr->pr_conf.host) != NULL)
+				yyerror("duplicate proxy `%s'",
+				    pr->pr_conf.host);
+
+			TAILQ_INSERT_TAIL(&conf->sc_proxies, pr, pr_entry);
 
 			if (*pr->pr_conf.proxy_addr == '\0')
 				yyerror("missing source in proxy block `%s'",
