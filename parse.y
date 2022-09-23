@@ -192,7 +192,10 @@ proxy		: PROXY STRING {
 			TAILQ_INSERT_TAIL(&conf->sc_proxies, p, pr_entry);
 		} '{' optnl proxyopts_l '}' {
 			/* check if duplicate */
-			/* eventually load the tls certs */
+
+			if (*pr->pr_conf.proxy_addr == '\0')
+				yyerror("missing source in proxy block `%s'",
+				    pr->pr_conf.host);
 
 			pr = NULL;
 		}
