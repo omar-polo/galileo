@@ -37,6 +37,7 @@
 	struct client *clt = tp->tp_arg;
 	struct proxy_config *pc = clt->clt_pc;
 	const char *stylesheet = pc->stylesheet;
+	const char *prfx = clt->clt_script_name;
 	const char *path = clt->clt_path_info;
 !}
 <!doctype html>
