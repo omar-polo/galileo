@@ -54,7 +54,7 @@ config_init(struct galileo *env)
 
 	env->sc_sock_fd = -1;
 
-	return 0;
+	return (0);
 }
 
 void
@@ -97,7 +97,7 @@ config_setproxy(struct galileo *env, struct proxy *p)
 
 	if (proc_compose(ps, PROC_PROXY, IMSG_CFG_SRV, p, sizeof(*p)) == -1)
 		fatal("proc_compose");
-	return 0;
+	return (0);
 }
 
 int
@@ -117,7 +117,7 @@ config_getproxy(struct galileo *env, struct imsg *imsg)
 
 	TAILQ_INSERT_TAIL(&env->sc_proxies, proxy, pr_entry);
 
-	return 0;
+	return (0);
 }
 
 int
@@ -221,7 +221,7 @@ int
 config_getsock(struct galileo *env, struct imsg *imsg)
 {
 	/* XXX: make it more like httpd/gotwebd' one */
-	return imsg->fd;
+	return (imsg->fd);
 }
 
 int

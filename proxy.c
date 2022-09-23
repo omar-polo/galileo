@@ -337,14 +337,14 @@ proxy_match(struct galileo *env, const char *name)
 	struct proxy		*pr;
 
 	if (name == NULL)
-		return NULL;
+		return (NULL);
 
 	TAILQ_FOREACH(pr, &env->sc_proxies, pr_entry) {
 		if (!strcmp(name, pr->pr_conf.host))
-			return &pr->pr_conf;
+			return (&pr->pr_conf);
 	}
 
-	return NULL;
+	return (NULL);
 }
 
 int

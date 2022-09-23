@@ -134,11 +134,11 @@ main(int argc, char **argv)
 	env = xcalloc(1, sizeof(*env));
 	config_init(env);
 	if (parse_config(conffile, env) == -1)
-		return 1;
+		return (1);
 
 	if (conftest) {
 		fprintf(stderr, "configuration OK\n");
-		return 0;
+		return (0);
 	}
 
 	ps = xcalloc(1, sizeof(*ps));
@@ -227,7 +227,7 @@ parent_configure(struct galileo *env)
 	}
 
 	config_purge(env);
-	return 0;
+	return (0);
 }
 
 static void

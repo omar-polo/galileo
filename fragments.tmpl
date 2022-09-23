@@ -115,7 +115,7 @@ gemini://{{ host }}{{ path }}
 
 	r = snprintf(scode, sizeof(code), "%d", code);
 	if (r < 0 || (size_t)r >= sizeof(code))
-		return 0;
+		return (0);
 
 !}
 	{{ render tp_head(tp, "en", "Proxy error") }}
