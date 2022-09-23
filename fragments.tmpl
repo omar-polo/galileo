@@ -45,8 +45,8 @@
 	<head>
 		<meta name="viewport" content="initial-scale=1" />
 
-		{{ if *stylesheet == '\0' }}
-		<link rel="stylesheet" href="{{ prfx|urlescape }}/galileo.css" />
+		{{ if *stylesheet == 0 }}
+		<link rel="stylesheet" href="{{ prfx }}galileo.css" />
 		{{ else }}
 		<link rel="stylesheet" href="{{ stylesheet|urlescape }}" />
 		{{ end }}
