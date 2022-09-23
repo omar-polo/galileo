@@ -479,51 +479,53 @@ done:
 	freeaddrinfo(clt->clt_addrinfo);
 	clt->clt_addrinfo = clt->clt_p = NULL;
 
-	/* initialize TLS for Gemini */
-	if ((conf = tls_config_new()) == NULL) {
-		log_warn("tls_config_new failed");
-		goto err;
-	}
-
-	tls_config_insecure_noverifycert(conf);
-
-	if ((clt->clt_ctx = tls_client()) == NULL) {
-		log_warnx("tls_client failed");
-		tls_config_free(conf);
-		goto err;
-	}
-
-	if (tls_configure(clt->clt_ctx, conf) == -1) {
-		log_warnx("tls_configure failed");
-		tls_config_free(conf);
-		goto err;
-	}
-
-	tls_config_free(conf);
-
-	if (tls_connect_socket(clt->clt_ctx, clt->clt_fd,
-	    clt->clt_pc->proxy_name) == -1) {
-		log_warnx("tls_connect_socket failed");
-		goto err;
-	}
-
 	clt->clt_bev = bufferevent_new(clt->clt_fd, proxy_read, proxy_write,
 	    proxy_error, clt);
 	if (clt->clt_bev == NULL) {
 		log_warn("bufferevent_new");
 		goto err;
 	}
-	out = EVBUFFER_OUTPUT(clt->clt_bev);
 
-	event_set(&clt->clt_bev->ev_read, clt->clt_fd, EV_READ,
-	    proxy_tls_readcb, clt->clt_bev);
-	event_set(&clt->clt_bev->ev_write, clt->clt_fd, EV_WRITE,
-	    proxy_tls_writecb, clt->clt_bev);
+	if (!clt->clt_pc->no_tls) {
+		/* initialize TLS for Gemini */
+		if ((conf = tls_config_new()) == NULL) {
+			log_warn("tls_config_new failed");
+			goto err;
+		}
+
+		tls_config_insecure_noverifycert(conf);
+
+		if ((clt->clt_ctx = tls_client()) == NULL) {
+			log_warnx("tls_client failed");
+			tls_config_free(conf);
+			goto err;
+		}
+
+		if (tls_configure(clt->clt_ctx, conf) == -1) {
+			log_warnx("tls_configure failed");
+			tls_config_free(conf);
+			goto err;
+		}
+
+		tls_config_free(conf);
+
+		if (tls_connect_socket(clt->clt_ctx, clt->clt_fd,
+			clt->clt_pc->proxy_name) == -1) {
+			log_warnx("tls_connect_socket failed");
+			goto err;
+		}
+
+		event_set(&clt->clt_bev->ev_read, clt->clt_fd, EV_READ,
+		    proxy_tls_readcb, clt->clt_bev);
+		event_set(&clt->clt_bev->ev_write, clt->clt_fd, EV_WRITE,
+		    proxy_tls_writecb, clt->clt_bev);
+	}
 
 	/* bufferevent_settimeout(); */
 	bufferevent_enable(clt->clt_bev, EV_READ|EV_WRITE);
 
 	/* TODO: compute the URL */
+	out = EVBUFFER_OUTPUT(clt->clt_bev);
 	if (evbuffer_add_printf(out, "gemini://%s/%s",
 	    clt->clt_pc->proxy_name, clt->clt_path_info) == -1) {
 		log_warn("bufferevent_printf failed");

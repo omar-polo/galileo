@@ -102,7 +102,7 @@ typedef struct {
 %}
 
 %token	INCLUDE ERROR
-%token	CHROOT HOSTNAME PORT PREFORK PROXY SOURCE STYLESHEET
+%token	CHROOT HOSTNAME NO PORT PREFORK PROXY SOURCE STYLESHEET TLS
 %token	<v.number>	NUMBER
 %token	<v.string>	STRING
 %type	<v.number>	port
@@ -244,6 +244,9 @@ proxyoptsl	: SOURCE STRING proxyport {
 				yyerror("stylesheet path too long!");
 			free($2);
 		}
+		| NO TLS {
+			pr->pr_conf.no_tls = 1;
+		}
 		;
 
 proxyport	: /* empty */ {
@@ -333,11 +336,13 @@ lookup(char *s)
 		{ "chroot",	CHROOT },
 		{ "hostname",	HOSTNAME },
 		{ "include",	INCLUDE },
+		{ "no",		NO },
 		{ "port",	PORT },
 		{ "prefork",	PREFORK },
 		{ "proxy",	PROXY },
 		{ "source",	SOURCE },
 		{ "stylesheet",	STYLESHEET},
+		{ "tls",	TLS },
 	};
 	const struct keywords	*p;
 

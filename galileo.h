@@ -119,6 +119,7 @@ struct proxy_config {
 	char		 proxy_addr[HOST_NAME_MAX + 1];
 	char		 proxy_name[HOST_NAME_MAX + 1];
 	char		 proxy_port[6];
+	int		 no_tls;
 };
 
 struct proxy {
