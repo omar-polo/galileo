@@ -61,6 +61,28 @@ void
 config_purge(struct galileo *env)
 {
 	struct proxy	*p;
+	struct fcgi	*fcgi;
+	struct client	*clt;
+
+	while ((fcgi = SPLAY_MIN(fcgi_tree, &env->sc_fcgi_socks))) {
+		while ((clt = SPLAY_MIN(client_tree, &fcgi->fcg_clients))) {
+			if (fcgi_abort_request(clt) == -1) {
+				fcgi = NULL;
+				break;
+			}
+		}
+
+		if (fcgi == NULL)
+			break;
+
+		SPLAY_REMOVE(fcgi_tree, &env->sc_fcgi_socks, fcgi);
+		fcgi_free(fcgi);
+	}
+
+	event_del(&env->sc_evsock);
+	event_del(&env->sc_evpause);
+	close(env->sc_sock_fd);
+	env->sc_sock_fd = -1;
 
 	while ((p = TAILQ_FIRST(&env->sc_proxies)) != NULL) {
 		TAILQ_REMOVE(&env->sc_proxies, p, pr_entry);
@@ -209,7 +231,8 @@ config_setreset(struct galileo *env)
 	int		 id;
 
 	for (id = 0; id < PROC_MAX; ++id)
-		proc_compose(ps, id, IMSG_CTL_RESET, NULL, 0);
+		if (id != PROC_PARENT)
+			proc_compose(ps, id, IMSG_CTL_RESET, NULL, 0);
 
 	return (0);
 }
@@ -218,6 +241,16 @@ int
 config_getreset(struct galileo *env, struct imsg *imsg)
 {
 	config_purge(env);
+
+	return (0);
+}
+
+int
+config_getcfg(struct galileo *env, struct imsg *imsg)
+{
+	if (privsep_process != PROC_PARENT)
+		proc_compose(env->sc_ps, PROC_PARENT,
+		    IMSG_CFG_DONE, NULL, 0);
 
 	return (0);
 }

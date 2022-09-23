@@ -101,8 +101,9 @@ proxy_launch(struct galileo *env)
 }
 
 void
-proxy_purge(struct proxy *srv)
+proxy_purge(struct proxy *pr)
 {
+	free(pr);
 }
 
 void
@@ -127,28 +128,24 @@ proxy_dispatch_parent(int fd, struct privsep_proc *p, struct imsg *imsg)
 	case IMSG_CFG_SOCK:
 		/* XXX: improve */
 
-		if (env->sc_sock_fd != -1) {
-			event_del(&env->sc_evsock);
-			close(env->sc_sock_fd);
-		}
-
 		env->sc_sock_fd = config_getsock(env, imsg);
 		if (env->sc_sock_fd == -1)
 			fatal("config_getsock");
 
 		event_set(&env->sc_evsock, env->sc_sock_fd,
 		    EV_READ | EV_PERSIST, fcgi_accept, env);
-		event_add(&env->sc_evsock, NULL);
 		evtimer_set(&env->sc_evpause, fcgi_accept, env);
 		break;
 	case IMSG_CFG_DONE:
-		log_debug("config done!");
-		break;
-	case IMSG_CTL_START:
+		config_getcfg(env, imsg);
 		proxy_launch(env);
 		break;
+	case IMSG_CTL_START:
+		break;
+	case IMSG_CTL_RESET:
+		config_getreset(env, imsg);
+		break;
 	default:
-		log_warnx("unknown message %d", imsg->hdr.type);
 		return (-1);
 	}
 

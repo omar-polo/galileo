@@ -154,6 +154,7 @@ int	 config_setsock(struct galileo *);
 int	 config_getsock(struct galileo *, struct imsg *);
 int	 config_setreset(struct galileo *);
 int	 config_getreset(struct galileo *, struct imsg *);
+int	 config_getcfg(struct galileo *, struct imsg *);
 
 /* fcgi.c */
 int	 fcgi_end_request(struct client *, int);
@@ -162,6 +163,7 @@ void	 fcgi_accept(int, short, void *);
 void	 fcgi_read(struct bufferevent *, void *);
 void	 fcgi_write(struct bufferevent *, void *);
 void	 fcgi_error(struct bufferevent *, short error, void *);
+void	 fcgi_free(struct fcgi *);
 int	 clt_putc(struct client *, char);
 int	 clt_puts(struct client *, const char *);
 int	 clt_write_bufferevent(struct client *, struct bufferevent *);

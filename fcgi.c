@@ -671,12 +671,18 @@ fcgi_error(struct bufferevent *bev, short event, void *d)
 		proxy_client_free(clt);
 	}
 
-	close(fcgi->fcg_s);
-	bufferevent_free(fcgi->fcg_bev);
 	SPLAY_REMOVE(fcgi_tree, &env->sc_fcgi_socks, fcgi);
-	free(fcgi);
+	fcgi_free(fcgi);
 
 	return;
+}
+
+void
+fcgi_free(struct fcgi *fcgi)
+{
+	close(fcgi->fcg_s);
+	bufferevent_free(fcgi->fcg_bev);
+	free(fcgi);
 }
 
 int
