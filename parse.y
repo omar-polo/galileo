@@ -690,6 +690,8 @@ parse_config(const char *filename, struct galileo *env)
 	setservent(1);
 
 	yyparse();
+	if (TAILQ_EMPTY(&conf->sc_proxies))
+		yyerror("no proxies defined");
 	errors = file->errors;
 	popfile();
 
