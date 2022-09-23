@@ -101,7 +101,7 @@ proxy_launch(struct galileo *env)
 }
 
 void
-proxy_purge(struct server *srv)
+proxy_purge(struct proxy *srv)
 {
 }
 
@@ -121,7 +121,7 @@ proxy_dispatch_parent(int fd, struct privsep_proc *p, struct imsg *imsg)
 
 	switch (imsg->hdr.type) {
 	case IMSG_CFG_SRV:
-		if (config_getserver(env, imsg) == -1)
+		if (config_getproxy(env, imsg) == -1)
 			fatal("config_getproxy");
 		break;
 	case IMSG_CFG_SOCK:
@@ -337,14 +337,14 @@ proxy_translate_gemtext(struct client *clt)
 static struct proxy_config *
 proxy_server_match(struct galileo *env, struct client *clt)
 {
-	struct server		*srv;
+	struct proxy		*pr;
 
 	if (clt->clt_server_name == NULL)
 		return NULL;
 
-	TAILQ_FOREACH(srv, &env->sc_servers, srv_entry) {
-		if (!strcmp(clt->clt_server_name, srv->srv_conf.host))
-			return &srv->srv_conf;
+	TAILQ_FOREACH(pr, &env->sc_proxies, pr_entry) {
+		if (!strcmp(clt->clt_server_name, pr->pr_conf.host))
+			return &pr->pr_conf;
 	}
 
 	return NULL;

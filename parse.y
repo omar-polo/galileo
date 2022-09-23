@@ -88,7 +88,7 @@ char		*symget(const char *);
 int		 getservice(const char *);
 
 static struct galileo	*conf = NULL;
-static struct server	*srv = NULL;
+static struct proxy	*pr = NULL;
 static int		 errors;
 
 typedef struct {
@@ -102,7 +102,7 @@ typedef struct {
 %}
 
 %token	INCLUDE ERROR
-%token	CHROOT HOSTNAME PORT PREFORK PROXY SERVER SOURCE STYLESHEET
+%token	CHROOT HOSTNAME PORT PREFORK PROXY SOURCE STYLESHEET
 %type	<v.number>	NUMBER
 %type	<v.number>	port
 %type	<v.string>	STRING
@@ -115,7 +115,7 @@ grammar		: /* empty */
 		| grammar '\n'
 		| grammar varset '\n'
 		| grammar main '\n'
-		| grammar server '\n'
+		| grammar proxy '\n'
 		| grammar error '\n'		{ file->errors++; }
 		;
 
@@ -155,7 +155,7 @@ varset		: STRING '=' STRING {
 main		: PREFORK NUMBER {
 			if ($2 <= 0 || $2 > PROC_MAX_INSTANCES) {
 				yyerror("invalid number of preforked "
-				    "servers: %lld", $2);
+				    "proxies: %lld", $2);
 				YYERROR;
 			}
 			conf->sc_prefork = $2;
@@ -171,49 +171,30 @@ main		: PREFORK NUMBER {
 		}
 		;
 
-server		: SERVER STRING {
-			struct server	*s;
+proxy		: PROXY STRING {
+			struct proxy	*p;
 			size_t		 n;
 
-			if ((s = calloc(1, sizeof(*s))) == NULL)
+			if ((p = calloc(1, sizeof(*p))) == NULL)
 				fatal("calloc");
 
-			n = strlcpy(s->srv_conf.host, $2,
-			    sizeof(s->srv_conf.host));
-			if (n >= sizeof(s->srv_conf.host)) {
+			n = strlcpy(p->pr_conf.host, $2,
+			    sizeof(p->pr_conf.host));
+			if (n >= sizeof(p->pr_conf.host)) {
 				yyerror("server name too long");
 				free($2);
-				free(s);
+				free(p);
 				YYERROR;
 			}
 			free($2);
 
-			srv = s;
-			TAILQ_INSERT_TAIL(&conf->sc_servers, srv, srv_entry);
-		} '{' optnl serveropts_l '}' {
+			pr = p;
+			TAILQ_INSERT_TAIL(&conf->sc_proxies, p, pr_entry);
+		} '{' optnl proxyopts_l '}' {
 			/* check if duplicate */
 			/* eventually load the tls certs */
 
-			srv = NULL;
-		}
-		;
-
-serveropts_l	: serveropts_l serveroptsl nl
-		| serveroptsl optnl
-		;
-
-serveroptsl	: PROXY STRING	{
-			/* ... */
-		}
-		| PROXY '{' optnl proxyopts_l '}'
-		| STYLESHEET string {
-			size_t n;
-
-			n = strlcpy(srv->srv_conf.stylesheet, $2,
-			    sizeof(srv->srv_conf.stylesheet));
-			if (n >= sizeof(srv->srv_conf.stylesheet))
-				yyerror("stylesheet path too long!");
-			free($2);
+			pr = NULL;
 		}
 		;
 
@@ -224,21 +205,30 @@ proxyopts_l	: proxyopts_l proxyoptsl nl
 proxyoptsl	: SOURCE STRING PORT port {
 			size_t n;
 
-			n = strlcpy(srv->srv_conf.proxy_addr, $2,
-			    sizeof(srv->srv_conf.proxy_addr));
-			if (n >= sizeof(srv->srv_conf.proxy_addr))
+			n = strlcpy(pr->pr_conf.proxy_addr, $2,
+			    sizeof(pr->pr_conf.proxy_addr));
+			if (n >= sizeof(pr->pr_conf.proxy_addr))
 				yyerror("proxy source too long!");
-			srv->srv_conf.proxy_port = $4;
+			pr->pr_conf.proxy_port = $4;
 
 			free($2);
 		}
 		| HOSTNAME STRING {
 			size_t n;
 
-			n = strlcpy(srv->srv_conf.proxy_name, $2,
-			    sizeof(srv->srv_conf.proxy_name));
-			if (n >= sizeof(srv->srv_conf.proxy_name))
+			n = strlcpy(pr->pr_conf.proxy_name, $2,
+			    sizeof(pr->pr_conf.proxy_name));
+			if (n >= sizeof(pr->pr_conf.proxy_name))
 				yyerror("proxy hostname too long!");
+			free($2);
+		}
+		| STYLESHEET string {
+			size_t n;
+
+			n = strlcpy(pr->pr_conf.stylesheet, $2,
+			    sizeof(pr->pr_conf.stylesheet));
+			if (n >= sizeof(pr->pr_conf.stylesheet))
+				yyerror("stylesheet path too long!");
 			free($2);
 		}
 		;
@@ -319,7 +309,6 @@ lookup(char *s)
 		{ "port",	PORT },
 		{ "prefork",	PREFORK },
 		{ "proxy",	PROXY },
-		{ "server",	SERVER },
 		{ "source",	SOURCE },
 		{ "stylesheet",	STYLESHEET},
 	};

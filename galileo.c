@@ -205,19 +205,19 @@ main(int argc, char **argv)
 static int
 parent_configure(struct galileo *env)
 {
-	struct server	*srv;
+	struct proxy	*proxy;
 	int		 id;
 
-	TAILQ_FOREACH(srv, &env->sc_servers, srv_entry) {
-		if (config_setserver(env, srv) == -1)
-			fatal("send server");
+	TAILQ_FOREACH(proxy, &env->sc_proxies, pr_entry) {
+		if (config_setproxy(env, proxy) == -1)
+			fatal("send proxy");
 	}
 
 	/* XXX: eventually they will be more than just one */
 	if (config_setsock(env) == -1)
 		fatal("send socket");
 
-	/* The servers need to reload their config. */
+	/* The proxiess need to reload their config. */
 	env->sc_reload = env->sc_prefork;
 
 	for (id = 0; id < PROC_MAX; id++) {

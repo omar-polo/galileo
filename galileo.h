@@ -121,17 +121,17 @@ struct proxy_config {
 	uint16_t	 proxy_port; /* TODO: turn into string */
 };
 
-struct server {
-	TAILQ_ENTRY(server)	 srv_entry;
-	struct proxy_config	 srv_conf;
+struct proxy {
+	TAILQ_ENTRY(proxy)	 pr_entry;
+	struct proxy_config	 pr_conf;
 };
-TAILQ_HEAD(serverlist, server);
+TAILQ_HEAD(proxylist, proxy);
 
 struct galileo {
 	char			 sc_conffile[PATH_MAX];
 	uint16_t		 sc_prefork;
 	char			 sc_chroot[PATH_MAX];
-	struct serverlist	 sc_servers;
+	struct proxylist	 sc_proxies;
 	struct fcgi_tree	 sc_fcgi_socks;
 
 	struct privsep		*sc_ps;
@@ -148,8 +148,8 @@ extern int privsep_process;
 /* config.c */
 int	 config_init(struct galileo *);
 void	 config_purge(struct galileo *);
-int	 config_setserver(struct galileo *, struct server *);
-int	 config_getserver(struct galileo *, struct imsg *);
+int	 config_setproxy(struct galileo *, struct proxy *);
+int	 config_getproxy(struct galileo *, struct imsg *);
 int	 config_setsock(struct galileo *);
 int	 config_getsock(struct galileo *, struct imsg *);
 int	 config_setreset(struct galileo *);
@@ -194,7 +194,7 @@ extern volatile int proxy_inflight;
 extern uint32_t proxy_fcg_id;
 
 void	 proxy(struct privsep *, struct privsep_proc *);
-void	 proxy_purge(struct server *);
+void	 proxy_purge(struct proxy *);
 int	 proxy_start_request(struct galileo *, struct client *);
 void	 proxy_client_free(struct client *);
 

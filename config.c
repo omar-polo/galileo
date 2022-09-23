@@ -50,7 +50,7 @@ config_init(struct galileo *env)
 		env->sc_prefork = PROXY_NUMPROC;
 
 	/* Other configuration. */
-	TAILQ_INIT(&env->sc_servers);
+	TAILQ_INIT(&env->sc_proxies);
 
 	env->sc_sock_fd = -1;
 
@@ -60,41 +60,40 @@ config_init(struct galileo *env)
 void
 config_purge(struct galileo *env)
 {
-	struct server	*srv;
+	struct proxy	*p;
 
-	while ((srv = TAILQ_FIRST(&env->sc_servers)) != NULL) {
-		TAILQ_REMOVE(&env->sc_servers, srv, srv_entry);
-		proxy_purge(srv);
+	while ((p = TAILQ_FIRST(&env->sc_proxies)) != NULL) {
+		TAILQ_REMOVE(&env->sc_proxies, p, pr_entry);
+		proxy_purge(p);
 	}
 }
 
 int
-config_setserver(struct galileo *env, struct server *srv)
+config_setproxy(struct galileo *env, struct proxy *p)
 {
 	struct privsep		*ps = env->sc_ps;
 
-	if (proc_compose(ps, PROC_PROXY, IMSG_CFG_SRV, srv, sizeof(*srv))
-	    == -1)
+	if (proc_compose(ps, PROC_PROXY, IMSG_CFG_SRV, p, sizeof(*p)) == -1)
 		fatal("proc_compose");
 	return 0;
 }
 
 int
-config_getserver(struct galileo *env, struct imsg *imsg)
+config_getproxy(struct galileo *env, struct imsg *imsg)
 {
-	struct server	*srv;
+	struct proxy	*proxy;
 
-	srv = xcalloc(1, sizeof(*srv));
-	if (IMSG_DATA_SIZE(imsg) != sizeof(*srv))
+	proxy = xcalloc(1, sizeof(*proxy));
+	if (IMSG_DATA_SIZE(imsg) != sizeof(*proxy))
 		fatalx("%s: bad imsg size", __func__);
 
-	memcpy(srv, imsg->data, sizeof(*srv));
+	memcpy(proxy, imsg->data, sizeof(*proxy));
 
 	log_debug("%s: server=%s proxy-to=%s:%d (%s)", __func__,
-	    srv->srv_conf.host, srv->srv_conf.proxy_addr,
-	    srv->srv_conf.proxy_port, srv->srv_conf.proxy_name);
+	    proxy->pr_conf.host, proxy->pr_conf.proxy_addr,
+	    proxy->pr_conf.proxy_port, proxy->pr_conf.proxy_name);
 
-	TAILQ_INSERT_TAIL(&env->sc_servers, srv, srv_entry);
+	TAILQ_INSERT_TAIL(&env->sc_proxies, proxy, pr_entry);
 
 	return 0;
 }
