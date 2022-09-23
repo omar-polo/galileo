@@ -193,10 +193,11 @@ int	 cmdline_symset(char *);
 extern volatile int proxy_inflight;
 extern uint32_t proxy_fcg_id;
 
-void	 proxy(struct privsep *, struct privsep_proc *);
-void	 proxy_purge(struct proxy *);
-int	 proxy_start_request(struct galileo *, struct client *);
-void	 proxy_client_free(struct client *);
+void			 proxy(struct privsep *, struct privsep_proc *);
+void			 proxy_purge(struct proxy *);
+struct proxy_config	*proxy_match(struct galileo *, const char *);
+int			 proxy_start_request(struct galileo *, struct client *);
+void			 proxy_client_free(struct client *);
 
 SPLAY_PROTOTYPE(fcgi_tree, fcgi, fcg_nodes, fcgi_cmp);
 SPLAY_PROTOTYPE(client_tree, client, clt_nodes, fcgi_client_cmp);

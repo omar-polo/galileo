@@ -334,16 +334,16 @@ proxy_translate_gemtext(struct client *clt)
 	}
 }
 
-static struct proxy_config *
-proxy_match(struct galileo *env, struct client *clt)
+struct proxy_config *
+proxy_match(struct galileo *env, const char *name)
 {
 	struct proxy		*pr;
 
-	if (clt->clt_server_name == NULL)
+	if (name == NULL)
 		return NULL;
 
 	TAILQ_FOREACH(pr, &env->sc_proxies, pr_entry) {
-		if (!strcmp(clt->clt_server_name, pr->pr_conf.host))
+		if (!strcmp(name, pr->pr_conf.host))
 			return &pr->pr_conf;
 	}
 
@@ -358,7 +358,7 @@ proxy_start_request(struct galileo *env, struct client *clt)
 	int			 r;
 	char			*url;
 
-	if ((clt->clt_pc = proxy_match(env, clt)) == NULL) {
+	if ((clt->clt_pc = proxy_match(env, clt->clt_server_name)) == NULL) {
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return (-1);
 		if (tp_error(clt->clt_tp, -1, "unknown server") == -1)
