@@ -41,9 +41,13 @@
 <html{{ if *lang != '\0' }}lang="{{ lang }}"{{ end }}>
 	<head>
 		<meta name="viewport" content="initial-scale=1" />
-		{{ if *stylesheet != '\0' }}
+
+		{{ if *stylesheet == '\0' }}
+		<link rel="stylesheet" href="{{ prfx|urlescape }}/galileo.css" />
+		{{ else }}
 		<link rel="stylesheet" href="{{ stylesheet|urlescape }}" />
 		{{ end }}
+
 		<title>
 			{{ if title }}
 				{{ title }}
