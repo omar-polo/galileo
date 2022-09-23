@@ -12,7 +12,7 @@
 .\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-.Dd September 14, 2022
+.Dd September 23, 2022
 .Dt GALILEO.CONF 5
 .Os
 .Sh NAME
@@ -31,43 +31,59 @@ are treated as comments and ignored.
 The available global configuration directives are as follows:
 .Bl -tag -width Ds
 .It Ic chroot Ar path
-Set the path to the
+Set the
 .Xr chroot 2
-used by
-.Xr galileo 8 .
+directory.
+If not specified, it defaults to
+.Pa /var/www ,
+the home directory of the www user.
 .It Ic prefork Ar number
-Specify the number of proxy processes.
+Run the specified number of proxy processes.
+.Xr galileo 8
+runs 3 proxy processes by default.
 .El
-.Sh SERVER CONFIGURATION
-At least one server context must exist for
+.Sh PROXY CONFIGURATION
+At least one proxy must be defined for
 .Xr galileo 8
 to work.
 .Pp
-A server context is declared with a unique
+A proxy context is declared with a unique
 .Ar name ,
-followed by server-specific configuration directive inside curly braces:
+followed by proxy-specific configuration directive inside curly braces:
 .Pp
-.Ic server Ar name Brq ...
+.Ic proxy Ar name Brq ...
 .Pp
-The available server configuration directives are as follows:
-.Bl -tag -width Ds
-.It Ic proxy Brq ...
-Define the proxy configuration for the matching host.
 The available proxy configuration directives are as follows:
 .Bl -tag -width Ds
-.It Ic source Ar address Ic port Ar port
+.It Ic hostname Ar name
+Specify the
+.Ar name
+used for SNI and the Gemini request.
+Defaults to the address given in the
+.Ic source
+option.
+.It Ic source Ar address Op Ic port Ar port
 Specify to which
 .Ar address
 and
 .Ar port
 connect to.
-.It Ic hostname Ar name
-Specify the
-.Ar name
-used for SNI and the Gemini request.
-.El
+.Ar port
+is 1965 by default.
+It's the only mandatory option.
 .It Ic stylesheet Ar path
 Specify the path to the stylesheet linked in the generated HTML.
+This must be a valid absolute URI.
+Defaults to
+.Pa galileo.css
+with prepended the URL prefix on which
+.Xr galileo 8
+is served.
+.It Ic no tls
+Do not setup the TLS layer.
+Useful for saving some CPU cycles when connecting to a Gemini server
+listening on localhost that is able to speak Gemini without TLS.
+TLS is enabled by default.
 .El
 .Sh FILES
 .Bl -tag -width Ds -compact
@@ -80,16 +96,20 @@ configuration file.
 The following example will proxy the Gemini capsule
 .Sq gemini://gemini.example.com
 as
-.Sq https://www.example.com
-.Pq or Sq http://
-assuming a Gemini server is listening on 127.0.0.1:
+.Sq www.example.com
+over HTTP:
 .Bd -literal -offset indent
-server "www.example.com" {
-	proxy {
-		source 127.0.0.1 port 1965
-		hostname "gemini.example.com"
-	}
-	stylesheet "/galileo.css"
+proxy "www.example.com" {
+	source "gemini.example.com"
+}
+.Ed
+.Pp
+Alternatively, assuming the Gemini server is running on localhost on a
+non-standard port:
+.Bd -literal -offset indent
+proxy "www.example.com" {
+	source 127.0.0.1 port 10965
+	hostname "gemini.example.com"
 }
 .Ed
 .Pp
@@ -112,6 +132,36 @@ server "www.example.com" {
 		root "/htdocs"
 	}
 	location "/*" {
+		fastcgi socket "/run/galileo.sock"
+	}
+}
+.Ed
+.Pp
+.Xr galileo 8
+can also be exposed under a URL path prefix.
+The following example proxies the same Gemini capsule as
+.Sq www.example.com/galileo/
+over HTTP.
+The only change is in the
+.Xr httpd 8
+configuration, as
+.Xr galileo 8
+handles this case transparently if the HTTP server properly defines
+the
+.Sq PATH_INFO
+and
+.Sq SCRIPT_NAME
+FastCGI parameters.
+.Bd -literal -offset indent
+server "www.example.com" {
+	listen on * port 80
+
+	location "/galileo/galileo.css" {
+		request strip 1
+		root "/htdocs"
+	}
+	location "/galileo/*" {
+		request strip 1
 		fastcgi socket "/run/galileo.sock"
 	}
 }
