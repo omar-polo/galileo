@@ -33,10 +33,12 @@
 
 {{ define tp_head(struct template *tp, const char *lang,
     const char *title) }}
-{! struct client *clt = tp->tp_arg; !}
-{! struct proxy_config *pc = clt->clt_pc; !}
-{! const char *stylesheet = pc->stylesheet; !}
-{! const char *path = clt->clt_path_info; !}
+{!
+	struct client *clt = tp->tp_arg;
+	struct proxy_config *pc = clt->clt_pc;
+	const char *stylesheet = pc->stylesheet;
+	const char *path = clt->clt_path_info;
+!}
 <!doctype html>
 <html{{ if *lang != '\0' }}lang="{{ lang }}"{{ end }}>
 	<head>
@@ -60,10 +62,12 @@
 {{ end }}
 
 {{ define tp_foot(struct template *tp) }}
-	{! struct client *clt = tp->tp_arg; !}
-	{! struct proxy_config *pc = clt->clt_pc; !}
-	{! const char *host = pc->proxy_name; !}
-	{! const char *path = clt->clt_path_info; !}
+{!
+	struct client *clt = tp->tp_arg;
+	struct proxy_config *pc = clt->clt_pc;
+	const char *host = pc->proxy_name;
+	const char *path = clt->clt_path_info;
+!}
 
 		<footer>
 			<hr />
