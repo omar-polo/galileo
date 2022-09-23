@@ -356,7 +356,7 @@ proxy_start_request(struct galileo *env, struct client *clt)
 	struct addrinfo		 hints;
 	struct asr_query	*query;
 	int			 r;
-	char			*url, port[32];
+	char			*url;
 
 	if ((clt->clt_pc = proxy_server_match(env, clt)) == NULL) {
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
@@ -389,13 +389,12 @@ proxy_start_request(struct galileo *env, struct client *clt)
 		return (0);
 	}
 
-	(void)snprintf(port, sizeof(port), "%d", clt->clt_pc->proxy_port);
-
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	query = getaddrinfo_async(clt->clt_pc->proxy_addr, port, &hints, NULL);
+	query = getaddrinfo_async(clt->clt_pc->proxy_addr,
+	    clt->clt_pc->proxy_port, &hints, NULL);
 	if (query == NULL) {
 		log_warn("getaddrinfo_async");
 		return (fcgi_abort_request(clt));
@@ -420,7 +419,7 @@ proxy_resolved(struct asr_result *res, void *d)
 	clt->clt_evasr = NULL;
 
 	if (res->ar_gai_errno != 0) {
-		log_warnx("failed to resolve %s:%d: %s",
+		log_warnx("failed to resolve %s:%s: %s",
 		    pc->proxy_addr, pc->proxy_port,
 		    gai_strerror(res->ar_gai_errno));
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
@@ -548,7 +547,7 @@ done:
 	return;
 
 err:
-	log_warn("failed to connect to %s:%d",
+	log_warn("failed to connect to %s:%s",
 	    clt->clt_pc->proxy_addr, clt->clt_pc->proxy_port);
 	if (proxy_start_reply(clt, 501, "text/html") == -1)
 		return;

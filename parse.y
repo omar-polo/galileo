@@ -202,15 +202,13 @@ proxyopts_l	: proxyopts_l proxyoptsl nl
 		| proxyoptsl optnl
 		;
 
-proxyoptsl	: SOURCE STRING PORT port {
+proxyoptsl	: SOURCE STRING proxyport {
 			size_t n;
 
 			n = strlcpy(pr->pr_conf.proxy_addr, $2,
 			    sizeof(pr->pr_conf.proxy_addr));
 			if (n >= sizeof(pr->pr_conf.proxy_addr))
 				yyerror("proxy source too long!");
-			pr->pr_conf.proxy_port = $4;
-
 			free($2);
 		}
 		| HOSTNAME STRING {
@@ -232,6 +230,20 @@ proxyoptsl	: SOURCE STRING PORT port {
 			free($2);
 		}
 		;
+
+proxyport	: /* empty */ {
+			strlcpy(pr->pr_conf.proxy_port, "1965",
+			    sizeof(pr->pr_conf.proxy_port));
+		}
+		| PORT port {
+			size_t len;
+			int n;
+
+			len = sizeof(pr->pr_conf.proxy_port);
+			n = snprintf(pr->pr_conf.proxy_port, len, "%lld", $2);
+			if (n < 0 || (size_t)n >= len)
+				fatal("port number too long?");
+		};
 
 port		: NUMBER {
 			if ($1 <= 0 || $1 > (int)USHRT_MAX) {

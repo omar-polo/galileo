@@ -89,7 +89,7 @@ config_getproxy(struct galileo *env, struct imsg *imsg)
 
 	memcpy(proxy, imsg->data, sizeof(*proxy));
 
-	log_debug("%s: server=%s proxy-to=%s:%d (%s)", __func__,
+	log_debug("%s: proxy=%s -> %s:%s (%s)", __func__,
 	    proxy->pr_conf.host, proxy->pr_conf.proxy_addr,
 	    proxy->pr_conf.proxy_port, proxy->pr_conf.proxy_name);
 

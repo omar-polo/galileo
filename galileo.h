@@ -118,7 +118,7 @@ struct proxy_config {
 	char		 stylesheet[PATH_MAX];
 	char		 proxy_addr[HOST_NAME_MAX + 1];
 	char		 proxy_name[HOST_NAME_MAX + 1];
-	uint16_t	 proxy_port; /* TODO: turn into string */
+	char		 proxy_port[6];
 };
 
 struct proxy {
