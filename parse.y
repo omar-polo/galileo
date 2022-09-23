@@ -103,9 +103,9 @@ typedef struct {
 
 %token	INCLUDE ERROR
 %token	CHROOT HOSTNAME PORT PREFORK PROXY SOURCE STYLESHEET
-%type	<v.number>	NUMBER
+%token	<v.number>	NUMBER
+%token	<v.string>	STRING
 %type	<v.number>	port
-%type	<v.string>	STRING
 %type	<v.string>	string
 
 %%
