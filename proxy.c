@@ -335,7 +335,7 @@ proxy_translate_gemtext(struct client *clt)
 }
 
 static struct proxy_config *
-proxy_server_match(struct galileo *env, struct client *clt)
+proxy_match(struct galileo *env, struct client *clt)
 {
 	struct proxy		*pr;
 
@@ -358,7 +358,7 @@ proxy_start_request(struct galileo *env, struct client *clt)
 	int			 r;
 	char			*url;
 
-	if ((clt->clt_pc = proxy_server_match(env, clt)) == NULL) {
+	if ((clt->clt_pc = proxy_match(env, clt)) == NULL) {
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return (-1);
 		if (tp_error(clt->clt_tp, -1, "unknown server") == -1)
