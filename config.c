@@ -192,7 +192,7 @@ config_setsock(struct galileo *env)
 		}
 	}
 
-	/* close(fd); */
+	close(fd);
 	return (0);
 }
 
