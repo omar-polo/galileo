@@ -209,6 +209,14 @@ proxyoptsl	: SOURCE STRING proxyport {
 			    sizeof(pr->pr_conf.proxy_addr));
 			if (n >= sizeof(pr->pr_conf.proxy_addr))
 				yyerror("proxy source too long!");
+
+			if (*pr->pr_conf.proxy_name == '\0') {
+				n = strlcpy(pr->pr_conf.proxy_name, $2,
+				    sizeof(pr->pr_conf.proxy_name));
+				if (n >= sizeof(pr->pr_conf.proxy_name))
+					yyerror("proxy hostname too long!");
+			}
+
 			free($2);
 		}
 		| HOSTNAME STRING {
