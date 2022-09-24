@@ -12,7 +12,7 @@
 .\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-.Dd September 23, 2022
+.Dd September 24, 2022
 .Dt GALILEO 8
 .Os
 .Sh NAME
@@ -21,7 +21,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl dnv
-.Op Fl D Ar macro=value
+.Op Fl D Ar macro Ns = Ns Ar value
 .Op Fl f Ar file
 .Sh DESCRIPTION
 .Nm
@@ -37,7 +37,7 @@ The options are as follows:
 .Bl -tag -width tenletters
 .It Fl d
 Do not daemonize and log to standard error.
-.It Fl D Ar macro=value
+.It Fl D Ar macro Ns = Ns Ar value
 Override the value of a macro used in the configuration file.
 .It Fl f Ar file
 Specify the configuration file.
@@ -63,4 +63,7 @@ Default
 .Xr galileo.conf 5 ,
 .Xr httpd 8
 .Sh AUTHORS
-.An Omar Polo Aq Mt op@omarpolo.com
+The
+.Nm
+program was written by
+.An Omar Polo Aq Mt op@omarpolo.com .
