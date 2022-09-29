@@ -73,6 +73,7 @@ extern int	 nodebug;
 static int	 block;
 static int	 in_define;
 static int	 errors;
+static int	 lastline = -1;
 
 typedef struct {
 	union {
@@ -666,6 +667,12 @@ dbg(void)
 {
 	if (nodebug)
 		return;
+
+	if (yylval.lineno == lastline + 1) {
+		lastline = yylval.lineno;
+		return;
+	}
+	lastline = yylval.lineno;
 
 	printf("#line %d ", yylval.lineno);
 	printq(file->name);
