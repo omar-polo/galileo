@@ -363,7 +363,7 @@ igetc(void)
 int
 lgetc(int quotec)
 {
-	int		c, next;
+	int		c;
 
 	if (quotec) {
 		if ((c = igetc()) == EOF) {
@@ -376,15 +376,7 @@ lgetc(int quotec)
 		return (c);
 	}
 
-	while ((c = igetc()) == '\\') {
-		next = igetc();
-		if (next != '\n') {
-			c = next;
-			break;
-		}
-		yylval.lineno = file->lineno;
-		file->lineno++;
-	}
+	c = igetc();
 	if (c == '\t' || c == ' ') {
 		/* Compress blanks to a sigle space. */
 		do {
