@@ -103,3 +103,10 @@ template_reset(struct template *tp)
 {
 	tp->tp_ret = 0;
 }
+
+void
+template_free(struct template *tp)
+{
+	free(tp->tp_tmp);
+	free(tp);
+}

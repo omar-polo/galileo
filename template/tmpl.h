@@ -24,6 +24,7 @@ typedef int (*tmpl_putc)(struct template *, int);
 
 struct template {
 	void		*tp_arg;
+	char		*tp_tmp;
 	tmpl_puts	 tp_escape;
 	tmpl_puts	 tp_puts;
 	tmpl_putc	 tp_putc;
@@ -38,5 +39,6 @@ int		 tp_htmlescape(struct template *, const char *);
 
 struct template	*template(void *, tmpl_puts, tmpl_putc);
 void		 template_reset(struct template *);
+void		 template_free(struct template *);
 
 #endif
