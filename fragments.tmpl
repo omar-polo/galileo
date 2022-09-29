@@ -108,6 +108,19 @@ gemini://{{ host }}{{ path }}
 </figure>
 {{ end }}
 
+{{ define tp_pre_open(struct template *tp, const char *label) }}
+<figure>
+	{{ if label && *label != '\0' }}
+		<figcaption>{{ label }}</figcaption>
+	{{ end }}
+	<pre>
+{{ end }}
+
+{{ define tp_pre_close(struct template *tp) }}
+	</pre>
+</figure>
+{{ end }}
+
 {{ define tp_error(struct template *tp, int code, const char *reason) }}
 {!
 	char	scode[32];

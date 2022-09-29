@@ -191,6 +191,8 @@ int	 fcgi_client_cmp(struct client *, struct client *);
 int	 tp_head(struct template *, const char *, const char *);
 int	 tp_foot(struct template *);
 int	 tp_figure(struct template *, const char *, const char *);
+int	 tp_pre_open(struct template *, const char *);
+int	 tp_pre_close(struct template *);
 int	 tp_error(struct template *, int, const char *);
 int	 tp_inputpage(struct template *, const char *);
 

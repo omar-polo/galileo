@@ -166,7 +166,7 @@ gemtext_translate_line(struct client *clt, char *line)
 	if (clt->clt_translate & TR_PRE) {
 		if (!strncmp(line, "```", 3)) {
 			clt->clt_translate &= ~TR_PRE;
-			return (clt_puts(clt, "</pre>"));
+			return (tp_pre_close(clt->clt_tp));
 		}
 
 		if (tp_htmlescape(clt->clt_tp, line) == -1)
@@ -268,8 +268,11 @@ gemtext_translate_line(struct client *clt, char *line)
 
 	/* pre opening */
 	if (!strncmp(line, "```", 3)) {
+		line += 3;
+		line += strspn(line, " \t");
+
 		clt->clt_translate |= TR_PRE;
-		return (clt_puts(clt, "<pre>"));
+		return (tp_pre_open(clt->clt_tp, line));
 	}
 
 	/* citation block */
@@ -783,7 +786,7 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 			return;
 	} else if (status == 0) {
 		if (clt->clt_translate & TR_PRE) {
-			if (clt_puts(clt, "</pre>"))
+			if (tp_pre_close(clt->clt_tp))
 				return;
 			clt->clt_translate &= ~TR_PRE;
 		}
