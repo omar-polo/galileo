@@ -28,10 +28,8 @@ my_putc(struct template *tp, int c)
 {
 	FILE	*fp = tp->tp_arg;
 
-	if (putc(c, fp) < 0) {
-		tp->tp_ret = -1;
+	if (putc(c, fp) < 0)
 		return (-1);
-	}
 
 	return (0);
 }
@@ -41,10 +39,8 @@ my_puts(struct template *tp, const char *s)
 {
 	FILE	*fp = tp->tp_arg;
 
-	if (fputs(s, fp) < 0) {
-		tp->tp_ret = -1;
+	if (fputs(s, fp) < 0)
 		return (-1);
-	}
 
 	return (0);
 }
@@ -69,7 +65,8 @@ main(int argc, char **argv)
 		TAILQ_INSERT_TAIL(&head, np, entries);
 	}
 
-	base(tp, &head);
+	if (base(tp, &head) == -1)
+		return (1);
 	puts("");
 
 	while ((np = TAILQ_FIRST(&head))) {
@@ -78,9 +75,8 @@ main(int argc, char **argv)
 		free(np);
 	}
 
-	template_reset(tp);
-
-	base(tp, &head);
+	if (base(tp, &head) == -1)
+		return (1);
 	puts("");
 
 	free(tp);

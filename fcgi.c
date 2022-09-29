@@ -802,10 +802,8 @@ clt_tp_puts(struct template *tp, const char *str)
 {
 	struct client		*clt = tp->tp_arg;
 
-	if (clt_puts(clt, str) == -1) {
-		tp->tp_ret = -1;
+	if (clt_puts(clt, str) == -1)
 		return (-1);
-	}
 
 	return (0);
 }
@@ -815,10 +813,8 @@ clt_tp_putc(struct template *tp, int c)
 {
 	struct client		*clt = tp->tp_arg;
 
-	if (clt_putc(clt, c) == -1) {
-		tp->tp_ret = -1;
+	if (clt_putc(clt, c) == -1)
 		return (-1);
-	}
 
 	return (0);
 }

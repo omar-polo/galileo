@@ -29,8 +29,6 @@ struct template {
 	tmpl_puts	 tp_puts;
 	tmpl_putc	 tp_putc;
 
-	int		 tp_ret;
-
 	int		(*tp_body)(struct template *);
 };
 
@@ -38,7 +36,6 @@ int		 tp_urlescape(struct template *, const char *);
 int		 tp_htmlescape(struct template *, const char *);
 
 struct template	*template(void *, tmpl_puts, tmpl_putc);
-void		 template_reset(struct template *);
 void		 template_free(struct template *);
 
 #endif

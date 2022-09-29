@@ -27,10 +27,8 @@ my_putc(struct template *tp, int c)
 {
 	FILE	*fp = tp->tp_arg;
 
-	if (putc(c, fp) < 0) {
-		tp->tp_ret = -1;
+	if (putc(c, fp) < 0)
 		return (-1);
-	}
 
 	return (0);
 }
@@ -40,10 +38,8 @@ my_puts(struct template *tp, const char *s)
 {
 	FILE	*fp = tp->tp_arg;
 
-	if (fputs(s, fp) < 0) {
-		tp->tp_ret = -1;
+	if (fputs(s, fp) < 0)
 		return (-1);
-	}
 
 	return (0);
 }
@@ -56,12 +52,12 @@ main(int argc, char **argv)
 	if ((tp = template(stdout, my_puts, my_putc)) == NULL)
 		err(1, "template");
 
-	base(tp, " *hello* ");
+	if (base(tp, " *hello* ") == -1)
+		return (1);
 	puts("");
 
-	template_reset(tp);
-
-	base(tp, "<hello>");
+	if (base(tp, "<hello>") == -1)
+		return (1);
 	puts("");
 
 	free(tp);

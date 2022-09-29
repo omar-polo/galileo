@@ -136,9 +136,9 @@ verbatims	: /* empty */
 
 raw		: STRING {
 			dbg();
-			printf("if (tp->tp_puts(tp, ");
+			printf("if ((tp_ret = tp->tp_puts(tp, ");
 			printq($1);
-			printf(") == -1) goto err;\n");
+			printf(")) == -1) goto err;\n");
 
 			free($1);
 		}
@@ -146,12 +146,12 @@ raw		: STRING {
 
 block		: define body end {
 			printf("err:\n");
-			puts("return tp->tp_ret;");
+			puts("return tp_ret;");
 			puts("}");
 			in_define = 0;
 		}
 		| define body finally end {
-			puts("return tp->tp_ret;");
+			puts("return tp_ret;");
 			puts("}");
 			in_define = 0;
 		}
@@ -162,6 +162,7 @@ define		: '{' DEFINE string '}' {
 
 			dbg();
 			printf("int\n%s\n{\n", $3);
+			puts("int tp_ret = 0;");
 
 			free($3);
 		}
@@ -175,11 +176,7 @@ body		: /* empty */
 
 special		: '{' RENDER string '}' {
 			dbg();
-			if (strrchr($3, ')') != NULL)
-				printf("if (%s == -1) goto err;\n", $3);
-			else
-				printf("if (%s != NULL && %s(tp) == -1) "
-				    "goto err;\n", $3, $3);
+			printf("if ((tp_ret = %s) == -1) goto err;\n", $3);
 			free($3);
 		}
 		| printf
@@ -187,20 +184,23 @@ special		: '{' RENDER string '}' {
 		| loop
 		| '{' string '|' UNSAFE '}' {
 			dbg();
-			printf("if (tp->tp_puts(tp, %s) == -1) goto err;\n",
+			printf("if ((tp_ret = tp->tp_puts(tp, %s)) == -1)\n",
 			    $2);
+			puts("goto err;");
 			free($2);
 		}
 		| '{' string '|' URLESCAPE '}' {
 			dbg();
-			printf("if (tp_urlescape(tp, %s) == -1) goto err;\n",
+			printf("if ((tp_ret = tp_urlescape(tp, %s)) == -1)\n",
 			    $2);
+			puts("goto err;");
 			free($2);
 		}
 		| '{' string '}' {
 			dbg();
-			printf("if (tp->tp_escape(tp, %s) == -1) goto err;\n",
+			printf("if ((tp_ret = tp->tp_escape(tp, %s)) == -1)\n",
 			    $2);
+			puts("goto err;");
 			free($2);
 		}
 		;
@@ -210,7 +210,8 @@ printf		: '{' PRINTF {
 			printf("if (asprintf(&tp->tp_tmp, ");
 		} printfargs '}' {
 			printf(") == -1)\n goto err;\n");
-			puts("if (tp->tp_escape(tp, tp->tp_tmp) == -1)");
+			puts("if ((tp_ret = tp->tp_escape(tp, tp->tp_tmp)) "
+			    "== -1)");
 			puts("goto err;");
 			puts("free(tp->tp_tmp);");
 			puts("tp->tp_tmp = NULL;");

@@ -31,10 +31,8 @@ tp_urlescape(struct template *tp, const char *str)
 		    isspace((unsigned char)*str) ||
 		    *str == '\'' || *str == '"' || *str == '\\') {
 			r = snprintf(tmp, sizeof(tmp), "%%%2X", *str);
-			if (r < 0  || (size_t)r >= sizeof(tmp)) {
-				tp->tp_ret = -1;
-				return (-1);
-			}
+			if (r < 0  || (size_t)r >= sizeof(tmp))
+				return (0);
 			if (tp->tp_puts(tp, tmp) == -1)
 				return (-1);
 		} else {
@@ -73,10 +71,8 @@ tp_htmlescape(struct template *tp, const char *str)
 			break;
 		}
 
-		if (r == -1) {
-			tp->tp_ret = -1;
+		if (r == -1)
 			return (-1);
-		}
 	}
 
 	return (0);
@@ -96,12 +92,6 @@ template(void *arg, tmpl_puts putsfn, tmpl_putc putcfn)
 	tp->tp_putc = putcfn;
 
 	return (tp);
-}
-
-void
-template_reset(struct template *tp)
-{
-	tp->tp_ret = 0;
 }
 
 void
