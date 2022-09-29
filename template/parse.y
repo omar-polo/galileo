@@ -139,14 +139,14 @@ raw		: STRING {
 			dbg();
 			printf("if ((tp_ret = tp->tp_puts(tp, ");
 			printq($1);
-			printf(")) == -1) goto err;\n");
+			puts(")) == -1) goto err;");
 
 			free($1);
 		}
 		;
 
 block		: define body end {
-			printf("err:\n");
+			puts("err:");
 			puts("return tp_ret;");
 			puts("}");
 			in_define = 0;
@@ -210,7 +210,8 @@ printf		: '{' PRINTF {
 			dbg();
 			printf("if (asprintf(&tp->tp_tmp, ");
 		} printfargs '}' {
-			printf(") == -1)\n goto err;\n");
+			puts(") == -1)");
+			puts("goto err;");
 			puts("if ((tp_ret = tp->tp_escape(tp, tp->tp_tmp)) "
 			    "== -1)");
 			puts("goto err;");
