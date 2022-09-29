@@ -291,6 +291,7 @@ parent_sig_handler(int sig, short ev, void *arg)
 		break;
 	case SIGCHLD:
 		log_warnx("one child died, quitting.");
+		/* fallthrough */
 	case SIGTERM:
 	case SIGINT:
 		parent_shutdown(ps->ps_env);

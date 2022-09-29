@@ -715,7 +715,7 @@ proxy_read(struct bufferevent *bev, void *d)
 			fcgi_end_request(clt, 0);
 			goto err;
 		}
-		/* fallback */
+		/* fallthrough */
 	default:
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			goto err;
