@@ -29,6 +29,7 @@
 
 #include <err.h>
 #include <event.h>
+#include <inttypes.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -155,7 +156,7 @@ varset		: STRING '=' STRING {
 main		: PREFORK NUMBER {
 			if ($2 <= 0 || $2 > PROC_MAX_INSTANCES) {
 				yyerror("invalid number of preforked "
-				    "proxies: %lld", $2);
+				    "proxies: %"PRId64, $2);
 				YYERROR;
 			}
 			conf->sc_prefork = $2;
@@ -258,14 +259,15 @@ proxyport	: /* empty */ {
 			int n;
 
 			len = sizeof(pr->pr_conf.proxy_port);
-			n = snprintf(pr->pr_conf.proxy_port, len, "%lld", $2);
+			n = snprintf(pr->pr_conf.proxy_port, len,
+			    "%"PRId64, $2);
 			if (n < 0 || (size_t)n >= len)
 				fatal("port number too long?");
 		};
 
 port		: NUMBER {
 			if ($1 <= 0 || $1 > (int)USHRT_MAX) {
-				yyerror("invalid port: %lld", $1);
+				yyerror("invalid port: %"PRId64, $1);
 				YYERROR;
 			}
 			$$ = $1;
