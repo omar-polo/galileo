@@ -2,7 +2,7 @@ body {
 	color: #222;
 	background-color: #fefefe;
 
-	max-width: 870px;
+	max-width: 670px;
 	margin: 0 auto;
 	border: 0;
 	padding: 1rem;
@@ -47,11 +47,24 @@ img {
 }
 
 figure {
+	margin: 0;
+	padding: 0;
 	text-align: center;
 }
 
 figcaption {
 	padding: 0.5rem;
+	font-size: 0.9rem;
+}
+
+pre {
+	background-color: #f3f3f3;
+	margin: 0;
+	padding: 1rem;
+	border-radius: 3px;
+	overflow-x: auto;
+
+	text-align: initial;
 }
 
 footer {
