@@ -13,7 +13,7 @@ PROG =		galileo
 VERSION =	0.1
 DISTNAME =	${PROG}-${VERSION}
 
-SRCS =		galileo.c config.c fcgi.c fragments.o log.c proc.c proxy.c \
+SRCS =		galileo.c config.c fcgi.c fragments.c log.c proc.c proxy.c \
 		template/tmpl.c xmalloc.c y.tab.c
 
 COBJS =		${COMPATS:.c=.o}
