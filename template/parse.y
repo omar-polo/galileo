@@ -88,6 +88,7 @@ typedef struct {
 %token	RENDER TQFOREACH UNSAFE URLESCAPE
 %token	<v.string>	STRING
 %type	<v.string>	string
+%type	<v.string>	stringy
 
 %%
 
@@ -223,8 +224,9 @@ printfargs	: /* empty */
 			printf(" %s", $2);
 			free($2);
 		}
+		;
 
-if		: '{' IF string '}' {
+if		: '{' IF stringy '}' {
 			dbg();
 			printf("if (%s) {\n", $3);
 			free($3);
@@ -236,7 +238,7 @@ endif		: end
 		| elsif body endif
 		;
 
-elsif		: '{' ELSE IF string '}' {
+elsif		: '{' ELSE IF stringy '}' {
 			dbg();
 			printf("} else if (%s) {\n", $4);
 			free($4);
@@ -276,6 +278,20 @@ string		: STRING string {
 			free($2);
 		}
 		| STRING
+		;
+
+stringy		: STRING
+		| STRING stringy {
+			if (asprintf(&$$, "%s %s", $1, $2) == -1)
+				err(1, "asprintf");
+			free($1);
+			free($2);
+		}
+		| '|' stringy {
+			if (asprintf(&$$, "|%s", $2) == -1)
+				err(1, "asprintf");
+			free($2);
+		}
 		;
 
 %%
