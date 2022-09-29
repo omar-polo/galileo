@@ -950,8 +950,9 @@ proxy_client_free(struct client *clt)
 	if (clt->clt_bev)
 		bufferevent_free(clt->clt_bev);
 
+	template_free(clt->clt_tp);
+
 	free(clt->clt_body);
-	free(clt->clt_tp);
 	free(clt->clt_server_name);
 	free(clt->clt_script_name);
 	free(clt->clt_path_info);
