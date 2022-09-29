@@ -18,7 +18,7 @@ To change the default user (`www`), the default configuration file
 (`/var/www/run/galileo.sock`), pass the the custom `USER`, `CONF` and
 `SOCK` to the configure:
 
-	$ ./configure USER=_galileo CONF=/usr/local/etc/galileo.conf ...
+	$ ./configure USER=_galileo CONF=/usr/local/etc/galileo.conf
 
 While a custom configuration file can be given using `-f`, the user
 can only be set during compilation.
