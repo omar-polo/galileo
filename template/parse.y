@@ -84,7 +84,7 @@ typedef struct {
 
 %}
 
-%token	DEFINE ELSE END ERROR FINALLY IF INCLUDE
+%token	DEFINE ELSE END ERROR FINALLY IF INCLUDE PRINTF
 %token	RENDER TQFOREACH UNSAFE URLESCAPE
 %token	<v.string>	STRING
 %type	<v.string>	string
@@ -182,6 +182,7 @@ special		: '{' RENDER string '}' {
 				    "goto err;\n", $3, $3);
 			free($3);
 		}
+		| printf
 		| if body endif			{ puts("}"); }
 		| loop
 		| '{' string '|' UNSAFE '}' {
@@ -203,6 +204,24 @@ special		: '{' RENDER string '}' {
 			free($2);
 		}
 		;
+
+printf		: '{' PRINTF {
+			dbg();
+			printf("if (asprintf(&tp->tp_tmp, ");
+		} printfargs '}' {
+			printf(") == -1)\n goto err;\n");
+			puts("if (tp->tp_escape(tp, tp->tp_tmp) == -1)");
+			puts("goto err;");
+			puts("free(tp->tp_tmp);");
+			puts("tp->tp_tmp = NULL;");
+		}
+		;
+
+printfargs	: /* empty */
+		| printfargs STRING {
+			printf(" %s", $2);
+			free($2);
+		}
 
 if		: '{' IF string '}' {
 			dbg();
@@ -298,6 +317,7 @@ lookup(char *s)
 		{ "finally",		FINALLY },
 		{ "if",			IF },
 		{ "include",		INCLUDE },
+		{ "printf",		PRINTF },
 		{ "render",		RENDER },
 		{ "tailq-foreach",	TQFOREACH },
 		{ "unsafe",		UNSAFE },
