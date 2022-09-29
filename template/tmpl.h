@@ -28,8 +28,6 @@ struct template {
 	tmpl_puts	 tp_escape;
 	tmpl_puts	 tp_puts;
 	tmpl_putc	 tp_putc;
-
-	int		(*tp_body)(struct template *);
 };
 
 int		 tp_urlescape(struct template *, const char *);
