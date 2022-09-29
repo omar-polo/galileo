@@ -1,17 +1,44 @@
 Galileo is a Gemini proxy for the World Wide Web (www.)  It speaks
-FastCGI and is intended to be run behind httpd(8).
+FastCGI and is intended to be run behind OpenBSD' httpd(8), but is known
+to work also with nginx and lighttpd.
 
 Galileo doesn't serve static files, it connects to an upstream Gemini
-servers and translate the HTTP requests into Gemini requests.  It
-serves the content as-is, with the only exception of translating
-text/gemini into HTML.
+server and translate HTTP requests into Gemini requests.  It serves the
+content as-is, with the only exception of translating text/gemini into
+HTML.
 
-To compile Galileo on OpenBSD run:
+To compile Galileo run:
 
-	$ make obj
+	$ ./configure
 	$ make
 	$ doas make install
 
-A portable version will follow.
+To change the default user (`www`), the default configuration file
+(`/etc/galileo.conf`) or the default socket location
+(`/var/www/run/galileo.sock`), pass the the custom `USER`, `CONF` and
+`SOCK` to the configure:
 
-Galileo is known to work also with nginx and lighttpd.
+	$ ./configure USER=_galileo CONF=/usr/local/etc/galileo.conf ...
+
+While a custom configuration file can be given using `-f`, the user
+can only be set during compilation.
+
+The `galileo.css` file is installed by default in `/var/www/htdocs`,
+set a custom `WWWDIR` during the install to specify another location:
+
+	$ doas make WWWDIR=/usr/local/www/htdocs install
+
+The dependencies are
+
+ - libasr
+ - libevent
+ - libtls or libretls
+
+When *not* building from a release tarball:
+
+ - (or if `parse.y' is modified) yacc or GNU bison are also needed.
+
+ - cross-compiling requires `HOSTCC' and `HOSTCFLAGS' to be passed to
+   the `configure' script, e.g.:
+
+	$ ./configure CC=riscv64-unknown-elf-gcc HOSTCC=cc

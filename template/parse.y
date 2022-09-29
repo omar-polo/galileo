@@ -73,7 +73,6 @@ extern int	 nodebug;
 static int	 block;
 static int	 in_define;
 static int	 errors;
-static char	 lerr[32];
 
 typedef struct {
 	union {
@@ -138,14 +137,14 @@ raw		: STRING {
 			dbg();
 			printf("if (tp->tp_puts(tp, ");
 			printq($1);
-			printf(") == -1) goto %s;\n", lerr);
+			printf(") == -1) goto err;\n");
 
 			free($1);
 		}
 		;
 
 block		: define body end {
-			printf("%s:\n", lerr);
+			printf("err:\n");
 			puts("return tp->tp_ret;");
 			puts("}");
 			in_define = 0;
@@ -159,8 +158,6 @@ block		: define body end {
 
 define		: '{' DEFINE string '}' {
 			in_define = 1;
-			(void)snprintf(lerr, sizeof(lerr), "err%llu",
-			    (unsigned long long)arc4random());
 
 			dbg();
 			printf("int\n%s\n{\n", $3);
@@ -178,37 +175,36 @@ body		: /* empty */
 special		: '{' RENDER string '}' {
 			dbg();
 			if (strrchr($3, ')') != NULL)
-				printf("if (%s == -1) goto %s;\n",
-				    $3, lerr);
+				printf("if (%s == -1) goto err;\n", $3);
 			else
 				printf("if (%s != NULL && %s(tp) == -1) "
-				    "goto %s;\n", $3, $3, lerr);
+				    "goto err;\n", $3, $3);
 			free($3);
 		}
 		| if body endif			{ puts("}"); }
 		| loop
 		| '{' string '|' ESCAPE '}' {
 			dbg();
-			printf("if (tp->tp_escape(tp, %s) == -1) goto %s;\n",
-			    $2, lerr);
+			printf("if (tp->tp_escape(tp, %s) == -1) goto err;\n",
+			    $2);
 			free($2);
 		}
 		| '{' string '|' UNSAFE '}' {
 			dbg();
-			printf("if (tp->tp_puts(tp, %s) == -1) goto %s;\n",
-			    $2, lerr);
+			printf("if (tp->tp_puts(tp, %s) == -1) goto err;\n",
+			    $2);
 			free($2);
 		}
 		| '{' string '|' URLESCAPE '}' {
 			dbg();
-			printf("if (tp_urlescape(tp, %s) == -1) goto %s;\n",
-			    $2, lerr);
+			printf("if (tp_urlescape(tp, %s) == -1) goto err;\n",
+			    $2);
 			free($2);
 		}
 		| '{' string '}' {
 			dbg();
-			printf("if (tp->tp_escape(tp, %s) == -1) goto %s;\n",
-			    $2, lerr);
+			printf("if (tp->tp_escape(tp, %s) == -1) goto err;\n",
+			    $2);
 			free($2);
 		}
 		;
@@ -254,7 +250,7 @@ end		: '{' END '}'
 
 finally		: '{' FINALLY '}' {
 			dbg();
-			printf("%s:\n", lerr);
+			puts("err:");
 		} verbatims
 		;
 

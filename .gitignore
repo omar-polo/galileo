@@ -1,3 +1,17 @@
 **/obj
 **/*.o
 **/*.d
+**/y.tab.*
+
+**/config.h
+**/config.log
+**/config.log.old
+**/config.mk
+
+**/*.sha256
+**/*.tar.gz
+
+fragments.c
+galileo
+
+template/template

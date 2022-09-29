@@ -1,42 +1,122 @@
-.PATH:${.CURDIR}/template/
+include config.mk
+
+# -- options --
+
+PREFIX =	/usr/local
+SBINDIR =	${PREFIX}/sbin
+MANDIR =	${PREFIX}/man
+WWWDIR =	/var/www/htdocs
+
+# -- build-related variables --
 
 PROG =		galileo
+VERSION =	0.1
+DISTNAME =	${PROG}-${VERSION}
 
-SRCS =		galileo.c config.c fcgi.c log.c parse.y proc.c proxy.c \
-		tmpl.c xmalloc.c
+SRCS =		galileo.c config.c fcgi.c fragments.o log.c proc.c proxy.c \
+		template/tmpl.c xmalloc.c y.tab.c
 
-# templates
-SRCS +=		fragments.c
+COBJS =		${COMPATS:.c=.o}
+OBJS =		${SRCS:.c=.o} ${COBJS}
 
 MAN =		${PROG}.conf.5 ${PROG}.8
 
-# debug
-CFLAGS +=	-O0 -g3
+# -- public targets --
 
-CFLAGS +=	-I${.CURDIR} -I${.CURDIR}/template
+all: ${PROG}
+.PHONY: all clean distclean install uninstall
 
-WARNINGS =	yes
+clean:
+	rm -f *.[do] y.tab.* compat/*.[do] tests/*.[do] fragments.c
+	${MAKE} -C template clean
 
-CDIAGFLAGS =	-Wall -Wextra -Wpointer-arith -Wuninitialized
-CDIAGFLAGS+=	-Wstrict-prototypes -Wmissing-prototypes -Wunused
-CDIAGFLAGS+=	-Wsign-compare -Wshadow -Wno-unused-parameter
-CDIAGFLAGS+=	-Wno-missing-field-initializers
-CDIAGFLAGS+=	-Werror
+distclean: clean
+	rm -f config.h config.h.old config.mk config.log config.log.old
+	${MAKE} -C template distclean
 
-LDADD =		-levent -ltls -lutil
-DPADD =		${LIBEVENT} ${LIBTLS} ${LIBUTIL}
+install:
+	mkdir -p ${DESTDIR}${MANDIR}/man5
+	mkdir -p ${DESTDIR}${MANDIR}/man8
+	mkdir -p ${DESTDIR}${SBINDIR}
+	mkdir -p ${DESTDIR}${WWWDIR}
+	${INSTALL_MAN} galileo.conf.5 ${DESTDIR}${MANDIR}/man5/${PROG}.conf.5
+	${INSTALL_MAN} galileo.8 ${DESTDIR}${MANDIR}/man8/${PROG}.8
+	${INSTALL_PROGRAM} ${PROG} ${DESTDIR}${SBINDIR}
+	${INSTALL_DATA} galileo.css ${DESTDIR}${WWWDIR}
 
-PREFIX?=	/usr/local
-SBINDIR?=	${PREFIX}/sbin
-MANDIR?=	${PREFIX}/man/man
+uninstall:
+	rm ${DESTDIR}${MANDIR}/man5/${PROG}.conf.5
+	rm ${DESTDIR}${MANDIR}/man8/${PROG}.8
+	rm ${DESTDIR}${SBINDIR}/${PROG}
+	rm ${DESTDIR}${WWWDIR}/galileo.css
 
-SUBDIR +=	template
+# -- internal build targets --
 
-fragments.c: fragments.tmpl
-	${.CURDIR}/template/obj/template $? > $@
+${PROG}: ${OBJS}
+	${CC} -o $@ ${OBJS} ${LIBS} ${LDFLAGS}
 
-realinstall:
-	${INSTALL} ${INSTALL_COPY} -o ${BINOWN} -g ${BINGRP} \
-		-m ${BINMODE} ${PROG} ${SBINDIR}/${PROG}
+template/template:
+	${MAKE} -C template
 
-.include <bsd.prog.mk>
+fragments.c: template/template fragments.tmpl
+	./template/template fragments.tmpl > $@ || rm -f $@
+
+y.tab.c: parse.y
+	${YACC} -b y parse.y
+
+.c.o:
+	${CC} ${CFLAGS} -c $< -o $@
+
+# -- maintainer targets --
+
+DISTFILES =	Makefile \
+		README \
+		config.c \
+		configure \
+		fcgi.c \
+		fragments.c \
+		fragments.tmpl \
+		galileo.8 \
+		galileo.c \
+		galileo.conf.5 \
+		galileo.css \
+		galileo.h \
+		log.c \
+		log.h \
+		parse.y \
+		proc.c \
+		proc.h \
+		proxy.c \
+		xmalloc.c \
+		xmalloc.h \
+		y.tab.c
+
+dist: ${DISTNAME}.sha256
+
+${DISTNAME}.sha256: ${DISTNAME}.tar.gz
+	sha256 ${DISTNAME}.tar.gz > $@
+
+${DISTNAME}.tar.gz: ${DISTFILES}
+	mkdir -p .dist/${DISTNAME}/
+	${INSTALL} -m 0644 ${DISTFILES} .dist/${DISTNAME}
+	${MAKE} -C compat	DESTDIR=${PWD}/.dist/${DISTNAME}/compat dist
+	${MAKE} -C template	DESTDIR=${PWD}/.dist/${DISTNAME}/template dist
+	${MAKE} -C tests	DESTDIR=${PWD}/.dist/${DISTNAME}/tests dist
+	cd .dist/${DISTNAME} && chmod 755 configure template/configure
+	cd .dist && tar czf ../$@ ${DISTNAME}
+	rm -rf .dist/
+
+.PHONY: ${DISTNAME}.tar.gz
+
+# -- dependencies --
+
+-include galileo.d
+-include config.d
+-include fcgi.d
+-include fragments.d
+-include log.d
+-include parse.d
+-include proc.d
+-include proxy.d
+-include tmpl.d
+-include xmalloc.d

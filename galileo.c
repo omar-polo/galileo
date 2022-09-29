@@ -58,7 +58,7 @@ static struct privsep_proc procs[] = {
 
 int privsep_process;
 
-const char *conffile = CONF_FILE;
+const char *conffile = GALILEO_CONF;
 
 static __dead void
 usage(void)

@@ -1,25 +1,33 @@
 PROG =		template
-SRCS =		template.c parse.y
+SRCS =		template.c y.tab.c
+OBJS =		${SRCS:.c=.o} ${COBJS}
 
-# XXX
-NOMAN =		Yes
+DISTFILES =	Makefile \
+		configure \
+		parse.y \
+		template.c \
+		tmpl.c \
+		tmpl.h \
+		y.tab.c
 
+all: ${PROG}
 
-# debug
-CFLAGS +=	-O0 -g3
+include config.mk
 
-CFLAGS +=	-I${.CURDIR}
+${PROG}: ${OBJS}
+	${CC} -o $@ ${OBJS}
 
-WARNINGS =	yes
+y.tab.c: parse.y
+	${YACC} -b y parse.y
 
-CDIAGFLAGS =	-Wall -Wextra -Wpointer-arith -Wuninitialized
-CDIAGFLAGS+=	-Wstrict-prototypes -Wmissing-prototypes -Wunused
-CDIAGFLAGS+=	-Wsign-compare -Wshadow -Wno-unused-parameter
-CDIAGFLAGS+=	-Wno-missing-field-initializers
-CDIAGFLAGS+=	-Werror
+clean:
+	rm -rf *.o y.tab.* ${PROG}
 
-.if make(regress) || make(clean)
-SUBDIR = regress
-.endif
+distclean: clean
+	rm -f config.h config.h.old config.mk config.log config.log.old
 
-.include <bsd.prog.mk>
+dist: ${DISTFILES}
+	mkdir -p ${DESTDIR}/
+	${INSTALL} -m 0644 ${DISTFILES} ${DESTDIR}/
+
+.PHONY: all clean distclean dist

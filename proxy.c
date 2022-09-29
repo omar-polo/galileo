@@ -39,6 +39,7 @@
 #include <tls.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "log.h"
 #include "proc.h"
 #include "tmpl.h"
@@ -46,6 +47,12 @@
 #include "galileo.h"
 
 #define MINIMUM(a, b)	((a) < (b) ? (a) : (b))
+
+#if HAVE_LIBEVENT2
+# define G_TOUT(t)	((t).tv_sec)
+#else
+# define G_TOUT(t)	(t)
+#endif
 
 /* provided by OpenBSD' base libevent but not in any header? */
 extern void	 bufferevent_read_pressure_cb(struct evbuffer *, size_t,
@@ -519,6 +526,11 @@ done:
 		    proxy_tls_readcb, clt->clt_bev);
 		event_set(&clt->clt_bev->ev_write, clt->clt_fd, EV_WRITE,
 		    proxy_tls_writecb, clt->clt_bev);
+
+#if HAVE_LIBEVENT2
+		evbuffer_unfreeze(clt->clt_bev->input, 0);
+		evbuffer_unfreeze(clt->clt_bev->output, 1);
+#endif
 	}
 
 	/* bufferevent_settimeout(); */
@@ -834,7 +846,7 @@ proxy_tls_readcb(int fd, short event, void *arg)
 		goto err;
 	}
 
-	proxy_bufferevent_add(&bufev->ev_read, bufev->timeout_read);
+	proxy_bufferevent_add(&bufev->ev_read, G_TOUT(bufev->timeout_read));
 
 	len = EVBUFFER_LENGTH(bufev->input);
 	if (bufev->wm_read.low != 0 && len < bufev->wm_read.low)
@@ -851,7 +863,7 @@ proxy_tls_readcb(int fd, short event, void *arg)
 	return;
 
 retry:
-	proxy_bufferevent_add(&bufev->ev_read, bufev->timeout_read);
+	proxy_bufferevent_add(&bufev->ev_read, G_TOUT(bufev->timeout_read));
 	return;
 
 err:
@@ -901,7 +913,8 @@ proxy_tls_writecb(int fd, short event, void *arg)
 	}
 
 	if (EVBUFFER_LENGTH(bufev->output) != 0)
-		proxy_bufferevent_add(&bufev->ev_write, bufev->timeout_write);
+		proxy_bufferevent_add(&bufev->ev_write,
+		    G_TOUT(bufev->timeout_write));
 
 	if (bufev->writecb != NULL &&
 	    EVBUFFER_LENGTH(bufev->output) <= bufev->wm_write.low)
@@ -909,7 +922,7 @@ proxy_tls_writecb(int fd, short event, void *arg)
 	return;
 
 retry:
-	proxy_bufferevent_add(&bufev->ev_write, bufev->timeout_write);
+	proxy_bufferevent_add(&bufev->ev_write, G_TOUT(bufev->timeout_write));
 	return;
 
 err:

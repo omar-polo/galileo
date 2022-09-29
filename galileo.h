@@ -21,9 +21,18 @@
 #define nitems(_a) (sizeof((_a)) / sizeof((_a)[0]))
 #endif
 
+#ifndef GALILEO_USER
 #define GALILEO_USER		"www"
+#endif
+
+#ifndef GALILEO_CONF
+#define GALILEO_CONF		"/etc/galileo.conf"
+#endif
+
+#ifndef GALILEO_SOCK
 #define GALILEO_SOCK		"/var/www/run/galileo.sock"
-#define CONF_FILE		"/etc/galileo.conf"
+#endif
+
 #define FD_RESERVE		5
 #define PROC_MAX_INSTANCES	32
 #define PROXY_NUMPROC		3
