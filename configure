@@ -251,7 +251,8 @@ runtest() {
 	return 1
 }
 
-if runtest MMD _MMD -MMD >/dev/null; then
+if singletest MMD _MMD -MMD >/dev/null; then
+	CFLAGS="${CFLAGS} -MMD"
 	echo "adding -MMD to CFLAGS" >&2
 	echo "adding -MMD to CFLAGS" >&3
 fi
