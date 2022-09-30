@@ -40,6 +40,12 @@
 #define GEMINI_MAXLEN		(1024 + 1) /* NULL */
 #define FORM_URLENCODED		"application/x-www-form-urlencoded"
 
+#ifdef DEBUG
+#define DPRINTF		log_debug
+#else
+#define DPRINTF(x...)	do {} while (0)
+#endif
+
 enum {
 	METHOD_UNKNOWN,
 	METHOD_GET,

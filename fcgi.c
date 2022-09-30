@@ -320,7 +320,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			free(clt->clt_server_name);
 			if ((clt->clt_server_name = strdup(server)) == NULL)
 				return (-1);
-			log_debug("clt %d: server_name: %s", clt->clt_id,
+			DPRINTF("clt %d: server_name: %s", clt->clt_id,
 			    clt->clt_server_name);
 			continue;
 		}
@@ -342,7 +342,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			if (clt->clt_script_name == NULL)
 				return (-1);
 
-			log_debug("clt %d: script_name: %s", clt->clt_id,
+			DPRINTF("clt %d: script_name: %s", clt->clt_id,
 			    clt->clt_script_name);
 			continue;
 		}
@@ -364,7 +364,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			if (clt->clt_path_info == NULL)
 				return (-1);
 
-			log_debug("clt %d: path_info: %s", clt->clt_id,
+			DPRINTF("clt %d: path_info: %s", clt->clt_id,
 			    clt->clt_path_info);
 			continue;
 		}
@@ -380,7 +380,7 @@ fcgi_parse_params(struct fcgi *fcgi, struct evbuffer *src, struct client *clt)
 			if ((clt->clt_query = strdup(query)) == NULL)
 				return (-1);
 
-			log_debug("clt %d: query: %s", clt->clt_id,
+			DPRINTF("clt %d: query: %s", clt->clt_id,
 			    clt->clt_query);
 			continue;
 		}
@@ -493,13 +493,11 @@ fcgi_read(struct bufferevent *bev, void *d)
 			fcgi->fcg_want = FCGI_RECORD_BODY;
 			bufferevent_read(bev, &hdr, sizeof(hdr));
 
-#ifdef DEBUG
-			log_warnx("header: v=%d t=%d id=%d len=%d p=%d",
+			DPRINTF("header: v=%d t=%d id=%d len=%d p=%d",
 			    hdr.version, hdr.type,
 			    CAT(hdr.req_id0, hdr.req_id1),
 			    CAT(hdr.content_len0, hdr.content_len1),
 			    hdr.padding);
-#endif
 
 			if (hdr.version != FCGI_VERSION_1) {
 				log_warnx("unknown fastcgi version: %d",
