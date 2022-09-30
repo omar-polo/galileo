@@ -36,7 +36,7 @@
 {!
 	struct client *clt = tp->tp_arg;
 	struct proxy_config *pc = clt->clt_pc;
-	const char *stylesheet = pc->stylesheet;
+	const char *stylesheet = pc ? pc->stylesheet : "";
 	const char *prfx = clt->clt_script_name;
 	const char *path = clt->clt_path_info;
 !}
@@ -54,7 +54,7 @@
 		<title>
 			{{ if title }}
 				{{ title }}
-			{{ else }}
+			{{ else if pc }}
 				gemini://{{ pc->proxy_name }}{{ path }}
 			{{ end }}
 		</title>
@@ -66,24 +66,24 @@
 {!
 	struct client *clt = tp->tp_arg;
 	struct proxy_config *pc = clt->clt_pc;
-	const char *host = pc->proxy_name;
 	const char *path = clt->clt_path_info;
 
 	if (path == NULL)
 		path = "";
 !}
-
+	{{ if pc }}
 		<footer>
 			<hr />
 			<dl>
 				<dt>Original URL:</dt>
 				<dd>
-<a href="gemini://{{ host | urlescape }}{{ path | urlescape }}">
-gemini://{{ host }}{{ path }}
+<a href="gemini://{{ pc->proxy_name | urlescape }}{{ path | urlescape }}">
+gemini://{{ pc->proxy_name }}{{ path }}
 </a>
 				</dd>
 			</dl>
 		</footer>
+	{{ end }}
 	</body>
 </html>
 {{ end }}
