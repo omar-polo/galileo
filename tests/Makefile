@@ -20,6 +20,8 @@ DISTFILES =	Makefile \
 		recallocarray.c \
 		setgroups.c \
 		setproctitle.c \
+		setresgid.c \
+		setresuid.c \
 		strlcat.c \
 		strlcpy.c \
 		strtonum.c \

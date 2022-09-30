@@ -11,6 +11,8 @@ DISTFILES =	Makefile \
 		reallocarray.c \
 		recallocarray.c \
 		setproctitle.c \
+		setresgid.c \
+		setresuid.c \
 		stdlib.h \
 		string.h \
 		strlcat.c \
