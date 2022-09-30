@@ -150,6 +150,8 @@ HAVE_REALLOCARRAY=
 HAVE_RECALLOCARRAY=
 HAVE_SETGROUPS=
 HAVE_SETPROCTITLE=
+HAVE_SETRESGID=
+HAVE_SETRESUID=
 HAVE_STRLCAT=
 HAVE_STRLCPY=
 HAVE_STRTONUM=
@@ -273,6 +275,8 @@ runtest reallocarray	REALLOCARRAY -D_OPENBSD_SOURCE		|| true
 runtest recallocarray	RECALLOCARRAY -D_OPENBSD_SOURCE		|| true
 runtest setgroups	SETGROUPS -D_BSD_SOURCE			|| true
 runtest setproctitle	SETPROCTITLE				|| true
+runtest setresgid	SETRESGID -D_GNU_SOURCE			|| true
+runtest setresuid	SETRESUID -D_GNU_SOURCE			|| true
 runtest strlcat		STRLCAT					|| true
 runtest strlcpy		STRLCPY					|| true
 runtest strtonum	STRTONUM				|| true
@@ -362,6 +366,8 @@ cat <<EOF
 #define HAVE_RECALLOCARRAY	${HAVE_RECALLOCARRAY}
 #define HAVE_SETGROUPS		${HAVE_SETGROUPS}
 #define HAVE_SETPROCTITLE	${HAVE_SETPROCTITLE}
+#define HAVE_SETRESGID		${HAVE_SETRESGID}
+#define HAVE_SETRESUID		${HAVE_SETRESUID}
 #define HAVE_STRLCAT		${HAVE_STRLCAT}
 #define HAVE_STRLCPY		${HAVE_STRLCPY}
 #define HAVE_STRTONUM		${HAVE_STRTONUM}

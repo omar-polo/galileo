@@ -17,3 +17,11 @@ int	getdtablecount(void);
 #if !HAVE_GETDTABLESIZE
 int	getdtablesize(void);
 #endif
+
+#if !HAVE_SETRESGID
+int	setresgid(gid_t, gid_t, gid_t);
+#endif
+
+#if !HAVE_SETRESUID
+int	setresuid(uid_t, uid_t, uid_t);
+#endif
