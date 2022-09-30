@@ -385,7 +385,7 @@ proc_kill(struct privsep *ps)
 	proc_close(ps);
 
 	do {
-		pid = waitpid(WAIT_ANY, &status, 0);
+		pid = waitpid(-1, &status, 0);
 		if (pid <= 0)
 			continue;
 
