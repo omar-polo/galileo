@@ -45,7 +45,7 @@ static struct file {
 	char			*name;
 	size_t			 ungetpos;
 	size_t			 ungetsize;
-	u_char			*ungetbuf;
+	unsigned char		*ungetbuf;
 	int			 eof_reached;
 	int			 lineno;
 	int			 errors;
