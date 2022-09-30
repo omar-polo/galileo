@@ -79,10 +79,12 @@ config_purge(struct galileo *env)
 		fcgi_free(fcgi);
 	}
 
-	event_del(&env->sc_evsock);
-	event_del(&env->sc_evpause);
-	close(env->sc_sock_fd);
-	env->sc_sock_fd = -1;
+	if (env->sc_sock_fd != -1) {
+		event_del(&env->sc_evsock);
+		event_del(&env->sc_evpause);
+		close(env->sc_sock_fd);
+		env->sc_sock_fd = -1;
+	}
 
 	while ((p = TAILQ_FIRST(&env->sc_proxies)) != NULL) {
 		TAILQ_REMOVE(&env->sc_proxies, p, pr_entry);
