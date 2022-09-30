@@ -73,7 +73,7 @@ config_purge(struct galileo *env)
 		}
 
 		if (fcgi == NULL)
-			break;
+			continue;
 
 		SPLAY_REMOVE(fcgi_tree, &env->sc_fcgi_socks, fcgi);
 		fcgi_free(fcgi);
