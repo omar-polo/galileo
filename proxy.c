@@ -369,7 +369,7 @@ proxy_start_request(struct galileo *env, struct client *clt)
 		log_warnx("PATH_INFO not defined!");
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return (-1);
-		if (tp_error(clt->clt_tp, -1, "unknown server") == -1)
+		if (tp_error(clt->clt_tp, -1, "internal server error") == -1)
 			return (-1);
 		return (fcgi_end_request(clt, 1));
 	}
