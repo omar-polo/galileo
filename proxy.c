@@ -365,6 +365,15 @@ proxy_start_request(struct galileo *env, struct client *clt)
 	int			 r;
 	char			*url;
 
+	if (clt->clt_path_info == NULL) {
+		log_warnx("PATH_INFO not defined!");
+		if (proxy_start_reply(clt, 501, "text/html") == -1)
+			return (-1);
+		if (tp_error(clt->clt_tp, -1, "unknown server") == -1)
+			return (-1);
+		return (fcgi_end_request(clt, 1));
+	}
+
 	if ((clt->clt_pc = proxy_match(env, clt->clt_server_name)) == NULL) {
 		if (proxy_start_reply(clt, 501, "text/html") == -1)
 			return (-1);
