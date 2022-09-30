@@ -68,6 +68,9 @@
 	struct proxy_config *pc = clt->clt_pc;
 	const char *host = pc->proxy_name;
 	const char *path = clt->clt_path_info;
+
+	if (path == NULL)
+		path = "";
 !}
 
 		<footer>
