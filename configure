@@ -121,9 +121,9 @@ echo "running configure for \`template':" >&2
 echo "returning to the configure for \`galileo':" >&2
 
 CFLAGS="${CFLAGS} -I. -Itemplate"
-test -n "$conf" && CFLAGS="${CFLAGS} -DGALILEO_CONF=\"$conf\""
-test -n "$user" && CFLAGS="${CFLAGS} -DGALILEO_USER=\"$user\""
-test -n "$sock" && CFLAGS="${CFLAGS} -DGALILEO_SOCK=\"$conf\""
+test -n "$conf" && CFLAGS="${CFLAGS} -DGALILEO_CONF=\"\\\"$conf\\\"\""
+test -n "$user" && CFLAGS="${CFLAGS} -DGALILEO_USER=\"\\\"$user\\\"\""
+test -n "$sock" && CFLAGS="${CFLAGS} -DGALILEO_SOCK=\"\\\"$conf\\\"\""
 
 [ -w config.log ] && mv config.log config.log.old
 
