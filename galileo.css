@@ -97,6 +97,10 @@ footer dl * {
 		color: #8e8eff;
 	}
 
+	pre {
+		background-color: #111;
+	}
+
 	footer hr {
 		background-color: #ffffea;
 	}
