@@ -20,6 +20,10 @@ nav ul {
 	list-style: disclosure-closed;
 }
 
+nav ul li {
+    margin: .3rem 0;
+}
+
 blockquote {
 	font-style: italic;
 	margin: 1rem;
