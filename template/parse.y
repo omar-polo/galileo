@@ -84,7 +84,7 @@ typedef struct {
 
 %}
 
-%token	DEFINE ELSE END ERROR FINALLY IF INCLUDE PRINTF
+%token	DEFINE ELSE END ERROR FINALLY FOR IF INCLUDE PRINTF
 %token	RENDER TQFOREACH UNSAFE URLESCAPE
 %token	<v.string>	STRING
 %type	<v.string>	string
@@ -252,7 +252,13 @@ else		: '{' ELSE '}' {
 		}
 		;
 
-loop		: '{' TQFOREACH STRING STRING STRING '}' {
+loop		: '{' FOR stringy '}' {
+			printf("for (%s) {\n", $3);
+			free($3);
+		} body end {
+			puts("}");
+		}
+		| '{' TQFOREACH STRING STRING STRING '}' {
 			printf("TAILQ_FOREACH(%s, %s, %s) {\n",
 			    $3, $4, $5);
 			free($3);
@@ -333,6 +339,7 @@ lookup(char *s)
 		{ "else",		ELSE },
 		{ "end",		END },
 		{ "finally",		FINALLY },
+		{ "for",		FOR },
 		{ "if",			IF },
 		{ "include",		INCLUDE },
 		{ "printf",		PRINTF },

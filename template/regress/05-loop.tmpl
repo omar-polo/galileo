@@ -17,7 +17,10 @@ int	list(struct template *, struct tailhead *);
 {{ end }}
 
 {{ define list(struct template *tp, struct tailhead *head) }}
-	{! struct entry *np; !}
+{!
+	struct entry *np;
+	int i;
+!}
 	{{ if !TAILQ_EMPTY(head) }}
 		<p>items:</p>
 		<ul>
@@ -28,4 +31,11 @@ int	list(struct template *, struct tailhead *);
 	{{ else }}
 		<p>no items</p>
 	{{ end }}
+
+	<p>
+		{{ for i = 0; i < 3; ++i }}
+			hello{{ " " }}
+		{{ end }}
+		world!
+	</p>
 {{ end }}
