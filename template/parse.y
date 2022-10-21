@@ -528,8 +528,8 @@ newblock:
 		do {
 			if (starting) {
 				if (c == '!' || c == '{') {
-					lungetc('{');
 					lungetc(c);
+					lungetc('{');
 					break;
 				}
 				starting = 0;
