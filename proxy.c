@@ -62,6 +62,7 @@ void	proxy_init(struct privsep *, struct privsep_proc *, void *);
 int	proxy_launch(struct galileo *);
 void	proxy_inflight_dec(const char *);
 int	proxy_dispatch_parent(int, struct privsep_proc *, struct imsg *);
+int	proxy_resurl(struct client *, const char *, char *, size_t);
 void	proxy_translate_gemtext(struct client *);
 void	proxy_resolved(struct asr_result *, void *);
 void	proxy_connect(int, short, void *);
@@ -160,8 +161,90 @@ proxy_dispatch_parent(int fd, struct privsep_proc *p, struct imsg *imsg)
 }
 
 static int
+portok(const char **url, struct client *clt)
+{
+	const char		*u = *url;
+	const char		*port = clt->clt_pc->proxy_port;
+	size_t			 len;
+
+	len = strlen(port);
+
+	if (*u == '\0' || *u == '/' || *u == '?' || *u == '#')
+		return (1);
+	if (*u != ':')
+		return (0);
+	u++;
+	if (strncmp(u, port, len) != 0)
+		return (0);
+	u += len;
+	if (*u != '\0' && *u != '/' && *u != '?' && *u != '#')
+		return (0);
+	*url = u;
+	return (1);
+}
+
+int
+proxy_resurl(struct client *clt, const char *url, char *buf, size_t len)
+{
+	const char		*tmp;
+	size_t			 l;
+
+	l = strlen(clt->clt_server_name);
+
+	if (len == 0) {
+		log_warn("%s: zero-sized buffer!", __func__);
+		return (-1);
+	}
+
+	/* look if it's an absolute URI */
+	if (strncmp(url, "//", 2) == 0) {
+		tmp = url + 2;
+		if (strncmp(tmp, clt->clt_server_name, l) != 0)
+			goto done;
+
+		tmp += l;
+		if (!portok(&tmp, clt))
+			goto done;
+		url = tmp;
+	} else if (strncmp(url, "gemini://", 9) == 0) {
+		tmp = url + 9;
+		if (strncmp(tmp, clt->clt_server_name, l) != 0)
+			goto done;
+
+		tmp += l;
+		if (!portok(&tmp, clt))
+			goto done;
+		url = tmp;
+	} else {
+		tmp = url;
+		while (isalpha((unsigned char)*tmp) || *tmp == '+')
+			tmp++;
+		if (strncmp(tmp, "://", 3) == 0)
+			goto done;
+	}
+
+	/* maybe it's an absolute path? */
+	if (*url == '\0' || *url == '/') {
+		if (strlcpy(buf, clt->clt_script_name, len) >= len)
+			return (-1);
+		if (strlcat(buf, url + 1, len) >= len)
+			return (-1);
+		return (0);
+	}
+
+	/* otherwise, leave it as it is */
+ done:
+	if (strlcpy(buf, url, len) >= len)
+		return (-1);
+	return (0);
+}
+
+static int
 gemtext_translate_line(struct client *clt, char *line)
 {
+	char		 buf[1025];
+	char		*url;
+
 	/* preformatted line / closing */
 	if (clt->clt_translate & TR_PRE) {
 		if (!strncmp(line, "```", 3)) {
@@ -201,7 +284,7 @@ gemtext_translate_line(struct client *clt, char *line)
 		clt->clt_translate &= ~TR_LIST;
 	}
 
-	/* link -- TODO: relativify from SCRIPT_NAME */
+	/* link */
 	if (!strncmp(line, "=>", 2)) {
 		char *label;
 
@@ -214,19 +297,24 @@ gemtext_translate_line(struct client *clt, char *line)
 		else
 			*label++ = '\0';
 
-		if (fnmatch("*.jpg", line, 0) == 0 ||
-		    fnmatch("*.jpeg", line, 0) == 0 ||
-		    fnmatch("*.gif", line, 0) == 0 ||
-		    fnmatch("*.png", line, 0) == 0 ||
-		    fnmatch("*.svg", line, 0) == 0 ||
-		    fnmatch("*.webp", line, 0) == 0) {
+		if (proxy_resurl(clt, line, buf, sizeof(buf)) == 0)
+			url = buf;
+		else
+			url = line; /* leave the URL as it is */
+
+		if (fnmatch("*.jpg", url, 0) == 0 ||
+		    fnmatch("*.jpeg", url, 0) == 0 ||
+		    fnmatch("*.gif", url, 0) == 0 ||
+		    fnmatch("*.png", url, 0) == 0 ||
+		    fnmatch("*.svg", url, 0) == 0 ||
+		    fnmatch("*.webp", url, 0) == 0) {
 			if (clt->clt_translate & TR_NAV) {
 				if (clt_puts(clt, "</ul></nav>") == -1)
 					return (-1);
 				clt->clt_translate &= ~TR_NAV;
 			}
 
-			if (tp_figure(clt->clt_tp, line, label) == -1)
+			if (tp_figure(clt->clt_tp, url, label) == -1)
 				return (-1);
 
 			return (0);
@@ -241,17 +329,7 @@ gemtext_translate_line(struct client *clt, char *line)
 		if (clt_puts(clt, "<li><a href='") == -1)
 			return (-1);
 
-		/* XXX: do proper parsing */
-		if (*line == '/' || strstr(line, "//") == NULL) {
-			if (tp_urlescape(clt->clt_tp,
-			    clt->clt_script_name) == -1)
-				return (-1);
-
-			/* skip the first / */
-			line++;
-		}
-
-		if (tp_urlescape(clt->clt_tp, line) == -1 ||
+		if (tp_urlescape(clt->clt_tp, url) == -1 ||
 		    clt_puts(clt, "'>") == -1 ||
 		    tp_htmlescape(clt->clt_tp, label) == -1 ||
 		    clt_puts(clt, "</a></li>") == -1)
@@ -668,6 +746,7 @@ proxy_read(struct bufferevent *bev, void *d)
 	struct client		*clt = d;
 	struct evbuffer		*src = EVBUFFER_INPUT(bev);
 	const char		*ctype;
+	char			 buf[1025];
 	char			 lang[16];
 	char			*hdr, *mime;
 	size_t			 len;
@@ -711,19 +790,9 @@ proxy_read(struct bufferevent *bev, void *d)
 		/* handled below */
 		break;
 	case '3':
-		/* XXX: do proper parsing */
-		if (hdr[3] == '/' || strstr(&hdr[3], "//") == NULL) {
-			char *url;
-
-			if (asprintf(&url, "%s%s", clt->clt_script_name,
-			    &hdr[3]) == -1)
+		if (proxy_resurl(clt, &hdr[3], buf, sizeof(buf)) == 0) {
+			if (proxy_start_reply(clt, 302, buf) == -1)
 				goto err;
-
-			if (proxy_start_reply(clt, 302, url)) {
-				free(url);
-				goto err;
-			}
-			free(url);
 			fcgi_end_request(clt, 0);
 			goto err;
 		}
