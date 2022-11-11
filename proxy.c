@@ -294,8 +294,12 @@ gemtext_translate_line(struct client *clt, char *line)
 		label = line + strcspn(line, " \t");
 		if (*label == '\0')
 			label = line;
-		else
+		else {
 			*label++ = '\0';
+			label += strspn(label, " \t");
+			if (*label == '\0')
+				label = line;
+		}
 
 		if (proxy_resurl(clt, line, buf, sizeof(buf)) == 0)
 			url = buf;
