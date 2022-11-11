@@ -141,7 +141,7 @@ gemini://{{ pc->proxy_name }}{{ path }}
 	<p>The server ask for input: <q>{{ prompt }}</q>.</p>
 	<form method="post" enctype="{{ FORM_URLENCODED }}">
 		<label for="reply">{{ "response " }}</label>
-		<input type="text" value="" id="reply" name="q" />
+		<input type="text" value="" id="reply" name="q" autofocus />
 		{{ " " }}
 		<button type="submit">Submit!</button>
 	</form>
