@@ -189,6 +189,9 @@ proxy_resurl(struct client *clt, const char *url, char *buf, size_t len)
 	const char		*tmp;
 	size_t			 l;
 
+	if (clt->clt_server_name == NULL)
+		return (-1);
+
 	l = strlen(clt->clt_server_name);
 
 	if (len == 0) {
