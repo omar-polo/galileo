@@ -11,3 +11,6 @@ things to do (eventually.)  patches are welcome, thanks!
  - `listen' directive: allow to listen on (multiple) sockets, be UNIX
    or TCP ones.
  - extend to support gopher and/or spartan?
+ - simplify process IPC: proc.c is cool but provides more than we need;
+   there's no web of process that communicates between each others, just
+   a parent and (some) proxy processes.
