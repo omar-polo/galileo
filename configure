@@ -159,6 +159,7 @@ HAVE_SYS_QUEUE=
 HAVE_SYS_TREE=
 HAVE_UNVEIL=
 HAVE_VASPRINTF=
+HAVE_WAIT_ANY=
 HAVE___PROGNAME=
 
 # singletest name var extra-cflags extra-libs msg
@@ -257,6 +258,10 @@ if singletest MMD _MMD -MMD >/dev/null; then
 	CFLAGS="${CFLAGS} -MMD"
 	echo "adding -MMD to CFLAGS" >&2
 	echo "adding -MMD to CFLAGS" >&3
+fi
+
+if ! singletest WAIT_ANY WAIT_ANY; then
+	CFLAGS="${CFLAGS} -DWAIT_ANY=-1"
 fi
 
 runtest accept4		ACCEPT4 -D_GNU_SOURCE			|| true
