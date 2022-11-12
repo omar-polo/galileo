@@ -69,7 +69,9 @@ y.tab.c: parse.y
 
 # -- maintainer targets --
 
-DISTFILES =	Makefile \
+PRIVKEY =	set-PRIVKEY
+DISTFILES =	CHANGES \
+		Makefile \
 		README \
 		config.c \
 		configure \
@@ -91,7 +93,13 @@ DISTFILES =	Makefile \
 		xmalloc.h \
 		y.tab.c
 
+.PHONY: release dist
+
+release: ${DISTNAME}.sha256.sig
 dist: ${DISTNAME}.sha256
+
+${DISTNAME}.sha256.sig: ${DISTNAME}.sha256
+	signify -S -e -m ${DISTNAME}.sha256 -s ${PRIVKEY}
 
 ${DISTNAME}.sha256: ${DISTNAME}.tar.gz
 	sha256 ${DISTNAME}.tar.gz > $@
@@ -100,6 +108,7 @@ ${DISTNAME}.tar.gz: ${DISTFILES}
 	mkdir -p .dist/${DISTNAME}/
 	${INSTALL} -m 0644 ${DISTFILES} .dist/${DISTNAME}
 	${MAKE} -C compat	DESTDIR=${PWD}/.dist/${DISTNAME}/compat dist
+	${MAKE} -C keys		DESTDIR=${PWD}/.dist/${DISTNAME}/keys dist
 	${MAKE} -C template	DESTDIR=${PWD}/.dist/${DISTNAME}/template dist
 	${MAKE} -C tests	DESTDIR=${PWD}/.dist/${DISTNAME}/tests dist
 	cd .dist/${DISTNAME} && chmod 755 configure template/configure
