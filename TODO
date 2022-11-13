@@ -14,3 +14,4 @@ things to do (eventually.)  patches are welcome, thanks!
  - simplify process IPC: proc.c is cool but provides more than we need;
    there's no web of process that communicates between each others, just
    a parent and (some) proxy processes.
+ - make the build from the tarball works without building `template'.
