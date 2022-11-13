@@ -10,7 +10,7 @@ WWWDIR =	/var/www/htdocs
 # -- build-related variables --
 
 PROG =		galileo
-VERSION =	0.1
+VERSION =	0.2
 DISTNAME =	${PROG}-${VERSION}
 
 SRCS =		galileo.c config.c fcgi.c fragments.c log.c proc.c proxy.c \
