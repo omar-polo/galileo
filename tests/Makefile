@@ -1,5 +1,6 @@
 DISTFILES =	Makefile \
 		MMD.c \
+		WAIT_ANY.c \
 		__progname.c \
 		accept4.c \
 		asr_run.c \
