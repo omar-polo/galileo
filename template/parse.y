@@ -50,7 +50,7 @@ static struct file {
 	int			 lineno;
 	int			 errors;
 } *file, *topfile;
-int		 parse(const char *);
+int		 parse(FILE *, const char *);
 struct file	*pushfile(const char *, int);
 int		 popfile(void);
 int		 yyparse(void);
@@ -69,6 +69,8 @@ void		 dbg(void);
 void		 printq(const char *);
 
 extern int	 nodebug;
+
+static FILE	*fp;
 
 static int	 block;
 static int	 in_define;
@@ -125,7 +127,7 @@ verbatim1	: /* empty */
 		| verbatim1 STRING {
 			if (*$2 != '\0') {
 				dbg();
-				puts($2);
+				fprintf(fp, "%s\n", $2);
 			}
 			free($2);
 		}
@@ -137,23 +139,23 @@ verbatims	: /* empty */
 
 raw		: STRING {
 			dbg();
-			printf("if ((tp_ret = tp->tp_puts(tp, ");
+			fprintf(fp, "if ((tp_ret = tp->tp_puts(tp, ");
 			printq($1);
-			puts(")) == -1) goto err;");
+			fputs(")) == -1) goto err;\n", fp);
 
 			free($1);
 		}
 		;
 
 block		: define body end {
-			puts("err:");
-			puts("return tp_ret;");
-			puts("}");
+			fputs("err:\n", fp);
+			fputs("return tp_ret;\n", fp);
+			fputs("}\n", fp);
 			in_define = 0;
 		}
 		| define body finally end {
-			puts("return tp_ret;");
-			puts("}");
+			fputs("return tp_ret;\n", fp);
+			fputs("}\n", fp);
 			in_define = 0;
 		}
 		;
@@ -162,8 +164,8 @@ define		: '{' DEFINE string '}' {
 			in_define = 1;
 
 			dbg();
-			printf("int\n%s\n{\n", $3);
-			puts("int tp_ret = 0;");
+			fprintf(fp, "int\n%s\n{\n", $3);
+			fputs("int tp_ret = 0;\n", fp);
 
 			free($3);
 		}
@@ -177,59 +179,63 @@ body		: /* empty */
 
 special		: '{' RENDER string '}' {
 			dbg();
-			printf("if ((tp_ret = %s) == -1) goto err;\n", $3);
+			fprintf(fp, "if ((tp_ret = %s) == -1) goto err;\n",
+			    $3);
 			free($3);
 		}
 		| printf
-		| if body endif			{ puts("}"); }
+		| if body endif			{ fputs("}\n", fp); }
 		| loop
 		| '{' string '|' UNSAFE '}' {
 			dbg();
-			printf("if ((tp_ret = tp->tp_puts(tp, %s)) == -1)\n",
+			fprintf(fp,
+			    "if ((tp_ret = tp->tp_puts(tp, %s)) == -1)\n",
 			    $2);
-			puts("goto err;");
+			fputs("goto err;\n", fp);
 			free($2);
 		}
 		| '{' string '|' URLESCAPE '}' {
 			dbg();
-			printf("if ((tp_ret = tp_urlescape(tp, %s)) == -1)\n",
+			fprintf(fp,
+			    "if ((tp_ret = tp_urlescape(tp, %s)) == -1)\n",
 			    $2);
-			puts("goto err;");
+			fputs("goto err;\n", fp);
 			free($2);
 		}
 		| '{' string '}' {
 			dbg();
-			printf("if ((tp_ret = tp->tp_escape(tp, %s)) == -1)\n",
+			fprintf(fp,
+			    "if ((tp_ret = tp->tp_escape(tp, %s)) == -1)\n",
 			    $2);
-			puts("goto err;");
+			fputs("goto err;\n", fp);
 			free($2);
 		}
 		;
 
 printf		: '{' PRINTF {
 			dbg();
-			printf("if (asprintf(&tp->tp_tmp, ");
+			fprintf(fp, "if (asprintf(&tp->tp_tmp, ");
 		} printfargs '}' {
-			puts(") == -1)");
-			puts("goto err;");
-			puts("if ((tp_ret = tp->tp_escape(tp, tp->tp_tmp)) "
-			    "== -1)");
-			puts("goto err;");
-			puts("free(tp->tp_tmp);");
-			puts("tp->tp_tmp = NULL;");
+			fputs(") == -1)\n", fp);
+			fputs("goto err;\n", fp);
+			fputs("if ((tp_ret = tp->tp_escape(tp, tp->tp_tmp)) "
+			    "== -1)\n", fp);
+			fputs("goto err;\n", fp);
+			fputs("free(tp->tp_tmp);\n", fp);
+			fputs("tp->tp_tmp = NULL;\n", fp);
 		}
 		;
 
 printfargs	: /* empty */
 		| printfargs STRING {
-			printf(" %s", $2);
+			fprintf(fp, " %s", $2);
 			free($2);
 		}
 		;
 
 if		: '{' IF stringy '}' {
 			dbg();
-			printf("if (%s) {\n", $3);
+			fprintf(fp, "if (%s) {\n", $3);
 			free($3);
 		}
 		;
@@ -241,31 +247,31 @@ endif		: end
 
 elsif		: '{' ELSE IF stringy '}' {
 			dbg();
-			printf("} else if (%s) {\n", $4);
+			fprintf(fp, "} else if (%s) {\n", $4);
 			free($4);
 		}
 		;
 
 else		: '{' ELSE '}' {
 			dbg();
-			puts("} else {");
+			fputs("} else {\n", fp);
 		}
 		;
 
 loop		: '{' FOR stringy '}' {
-			printf("for (%s) {\n", $3);
+			fprintf(fp, "for (%s) {\n", $3);
 			free($3);
 		} body end {
-			puts("}");
+			fputs("}\n", fp);
 		}
 		| '{' TQFOREACH STRING STRING STRING '}' {
-			printf("TAILQ_FOREACH(%s, %s, %s) {\n",
+			fprintf(fp, "TAILQ_FOREACH(%s, %s, %s) {\n",
 			    $3, $4, $5);
 			free($3);
 			free($4);
 			free($5);
 		} body end {
-			puts("}");
+			fputs("}\n", fp);
 		}
 		;
 
@@ -274,7 +280,7 @@ end		: '{' END '}'
 
 finally		: '{' FINALLY '}' {
 			dbg();
-			puts("err:");
+			fputs("err:\n", fp);
 		} verbatims
 		;
 
@@ -679,8 +685,10 @@ popfile(void)
 }
 
 int
-parse(const char *filename)
+parse(FILE *outfile, const char *filename)
 {
+	fp = outfile;
+
 	if ((file = pushfile(filename, 0)) == 0)
 		return (-1);
 	topfile = file;
@@ -704,19 +712,19 @@ dbg(void)
 	}
 	lastline = yylval.lineno;
 
-	printf("#line %d ", yylval.lineno);
+	fprintf(fp, "#line %d ", yylval.lineno);
 	printq(file->name);
-	putchar('\n');
+	putc('\n', fp);
 }
 
 void
 printq(const char *str)
 {
-	putchar('"');
+	putc('"', fp);
 	for (; *str; ++str) {
 		if (*str == '"')
-			putchar('\\');
-		putchar(*str);
+			putc('\\', fp);
+		putc(*str, fp);
 	}
-	putchar('"');
+	putc('"', fp);
 }

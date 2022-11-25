@@ -19,9 +19,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int	parse(const char *);
+int	 parse(FILE *, const char *);
 
-int	nodebug;
+int	 nodebug;
 
 static void __dead
 usage(void)
@@ -34,15 +34,17 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	int	 ch, i;
+	FILE		*fp = stdout;
+	const char	*out = NULL;
+	int		 ch, i;
 
-	if (pledge("stdio rpath", NULL) == -1)
-		err(1, "pledge");
-
-	while ((ch = getopt(argc, argv, "G")) != -1) {
+	while ((ch = getopt(argc, argv, "Go:")) != -1) {
 		switch (ch) {
 		case 'G':
 			nodebug = 1;
+			break;
+		case 'o':
+			out = optarg;
 			break;
 		default:
 			usage();
@@ -51,17 +53,42 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	if (out && (fp = fopen(out, "w")) == NULL)
+		err(1, "can't open %s", out);
+
+	if (out && unveil(out, "wc") == -1)
+		err(1, "unveil %s", out);
+	if (unveil("/", "r") == -1)
+		err(1, "unveil /");
+	if (pledge(out ? "stdio rpath cpath" : "stdio rpath", NULL) == -1)
+		err(1, "pledge");
+
 	/* preamble */
-	puts("#include \"tmpl.h\"");
+	fprintf(fp, "#include \"tmpl.h\"\n");
 
 	if (argc == 0) {
-		parse("/dev/stdin");
-		exit(0);
+		if (parse(fp, "/dev/stdin") == -1)
+			goto err;
+	} else {
+		for (i = 0; i < argc; ++i)
+			if (parse(fp, argv[i]) == -1)
+				goto err;
 	}
 
-	for (i = 0; i < argc; ++i)
-		if (parse(argv[i]) == -1)
-			return (1);
+	if (ferror(fp))
+		goto err;
+
+	if (fclose(fp) == -1) {
+		fp = NULL;
+		goto err;
+	}
 
 	return (0);
+
+err:
+	if (fp)
+		fclose(fp);
+	if (out && unlink(out) == -1)
+		err(1, "unlink %s", out);
+	return (1);
 }
