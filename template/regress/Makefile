@@ -25,7 +25,7 @@ clean-comp:
 .SUFFIXES: .tmpl .c .o
 
 .tmpl.c:
-	./template $? > $@
+	./template -o $@ $?
 
 00-empty:
 	./template 00-empty.tmpl >/dev/null
