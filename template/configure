@@ -74,6 +74,7 @@ HAVE_STRLCAT=
 HAVE_STRLCPY=
 HAVE_STRTONUM=
 HAVE_SYS_QUEUE=
+HAVE_UNVEIL=
 HAVE_VASPRINTF=
 HAVE___PROGNAME=
 
@@ -160,6 +161,7 @@ runtest strlcat		STRLCAT					|| true
 runtest strlcpy		STRLCPY					|| true
 runtest strtonum	STRTONUM				|| true
 runtest sys_queue	SYS_QUEUE				|| true
+runtest unveil		UNVEIL					|| true
 runtest vasprintf	VASPRINTF -D_GNU_SOURCE			|| true
 runtest __progname	__PROGNAME				|| true
 
@@ -192,6 +194,7 @@ cat <<EOF
 #define HAVE_STRLCPY		${HAVE_STRLCPY}
 #define HAVE_STRTONUM		${HAVE_STRTONUM}
 #define HAVE_SYS_QUEUE		${HAVE_SYS_QUEUE}
+#define HAVE_UNVEIL		${HAVE_UNVEIL}
 #define HAVE_VASPRINTF		${HAVE_VASPRINTF}
 #define HAVE___PROGNAME		${HAVE___PROGNAME}
 
