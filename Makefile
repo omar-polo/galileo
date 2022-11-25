@@ -59,7 +59,7 @@ template/template:
 	${MAKE} -C template
 
 fragments.c: template/template fragments.tmpl
-	./template/template fragments.tmpl > $@ || rm -f $@
+	./template/template -o $@ fragments.tmpl
 
 y.tab.c: parse.y
 	${YACC} -b y parse.y
