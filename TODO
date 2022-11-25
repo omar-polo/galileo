@@ -15,3 +15,5 @@ things to do (eventually.)  patches are welcome, thanks!
    there's no web of process that communicates between each others, just
    a parent and (some) proxy processes.
  - make the build from the tarball works without building `template'.
+ - generate ids for headers for ease of linkability;
+   https://docs.gitlab.com/ee/user/markdown.html#header-ids-and-links
