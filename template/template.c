@@ -67,6 +67,7 @@ main(int argc, char **argv)
 	fprintf(fp, "#include \"tmpl.h\"\n");
 
 	if (argc == 0) {
+		nodebug = 1;
 		if (parse(fp, "/dev/stdin") == -1)
 			goto err;
 	} else {
