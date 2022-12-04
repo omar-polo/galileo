@@ -63,9 +63,6 @@ main(int argc, char **argv)
 	if (pledge(out ? "stdio rpath cpath" : "stdio rpath", NULL) == -1)
 		err(1, "pledge");
 
-	/* preamble */
-	fprintf(fp, "#include \"tmpl.h\"\n");
-
 	if (argc == 0) {
 		nodebug = 1;
 		if (parse(fp, "/dev/stdin") == -1)
