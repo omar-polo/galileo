@@ -26,6 +26,9 @@ tp_urlescape(struct template *tp, const char *str)
 	int	 r;
 	char	 tmp[4];
 
+	if (str == NULL)
+		return (0);
+
 	for (; *str; ++str) {
 		if (iscntrl((unsigned char)*str) ||
 		    isspace((unsigned char)*str) ||
@@ -48,6 +51,9 @@ int
 tp_htmlescape(struct template *tp, const char *str)
 {
 	int r;
+
+	if (str == NULL)
+		return (0);
 
 	for (; *str; ++str) {
 		switch (*str) {
