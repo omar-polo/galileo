@@ -479,6 +479,7 @@ yylex(void)
 	int		 token;
 	int		 starting = 0;
 	int		 ending = 0;
+	int		 quote = 0;
 
 	if (!in_define && block == 0) {
 		while ((c = lgetc(0)) != '{' && c != EOF) {
@@ -604,7 +605,13 @@ newblock:
 		return (c);
 
 	do {
-		if (c == '|') {
+		if (!quote && isspace((unsigned char)c))
+			break;
+
+		if (c == '"')
+			quote = !quote;
+
+		if (!quote && c == '|') {
 			lungetc(c);
 			break;
 		}
@@ -618,7 +625,7 @@ newblock:
 			ending = 0;
 			lungetc(c);
 			c = block;
-		} else if (c == '}') {
+		} else if (!quote && c == '}') {
 			ending = 1;
 			continue;
 		}
@@ -628,11 +635,11 @@ newblock:
 			yyerror("string too long");
 			return (findeol());
 		}
-	} while ((c = lgetc(0)) != EOF && !isspace((unsigned char)c));
+	} while ((c = lgetc(0)) != EOF);
 	*p = '\0';
 
 	if (c == EOF) {
-		yyerror("unterminated block");
+		yyerror(quote ? "unterminated quote" : "unterminated block");
 		return (0);
 	}
 	if (c ==  '\n')
