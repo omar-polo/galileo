@@ -55,10 +55,8 @@ uninstall:
 ${PROG}: ${OBJS}
 	${CC} -o $@ ${OBJS} ${LIBS} ${LDFLAGS}
 
-template/template:
+fragments.c: fragments.tmpl
 	${MAKE} -C template
-
-fragments.c: template/template fragments.tmpl
 	./template/template -o $@ fragments.tmpl
 
 y.tab.c: parse.y
