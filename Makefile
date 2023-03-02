@@ -117,13 +117,13 @@ ${DISTNAME}.tar.gz: ${DISTFILES}
 
 # -- dependencies --
 
--include galileo.d
 -include config.d
 -include fcgi.d
 -include fragments.d
+-include galileo.d
 -include log.d
--include parse.d
 -include proc.d
 -include proxy.d
--include tmpl.d
+-include template/tmpl.d
 -include xmalloc.d
+-include y.tab.d
