@@ -2,8 +2,6 @@ things to do (eventually.)  patches are welcome, thanks!
 
  - provide knobs for some features of the gemtext -> HTML conversion,
    automatic preview of images for example.
- - optional nav bar with buttons like "up one level", "home" or "root"
-   (see the "nav" branch.)
  - support for using client-side certificates.
  - `location' support for blocking certain sub-trees (or maybe even
    location-dependant proxying!)
