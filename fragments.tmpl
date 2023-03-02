@@ -116,14 +116,14 @@ gemini://{{ pc->proxy_name }}{{ path }}
 <header>
 	<nav>
 		<ul>
-			<li><a href="{{ prfx }}">Root</a></li>
+			<li><a href="{{ prfx }}">/ Root</a></li>
 
 			{{ if *home != '\0' }}
-			<li><a href="{{ prfx }}{{ home }}">Home</a></li>
+			<li><a href="{{ prfx }}{{ home }}">🏠 Home</a></li>
 			{{ end }}
 
 			{{ if strcmp(dname, ".") != 0 }}
-			<li><a href="{{ prfx }}{{ dname }}/">Up</a></li>
+			<li><a href="{{ prfx }}{{ dname }}/">↑ Up</a></li>
 			{{ end }}
 		</ul>
 	</nav>

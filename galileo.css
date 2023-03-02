@@ -16,7 +16,15 @@ header nav ul {
 
 header nav ul li {
     display: inline-block;
-    margin-right: 10px;
+    margin-right: 20px;
+}
+
+header nav a {
+    text-decoration: none;
+}
+
+header nav a:hover {
+    text-decoration: underline;
 }
 
 h1, h2, h3 {
