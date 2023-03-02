@@ -50,6 +50,10 @@ blockquote::before {
 	left: -1rem;
 }
 
+blockquote + blockquote::before {
+	content: "";
+}
+
 p {
 	text-align: justify;
 	hyphens: auto;
