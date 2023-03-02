@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 
 #include <event.h>
+#include <libgen.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -29,6 +30,8 @@
 
 #include "galileo.h"
 #include "tmpl.h"
+
+static int tp_navigation(struct template *);
 
 !}
 
@@ -61,6 +64,9 @@
 		</title>
 	</head>
 	<body>
+		{{ if path }}
+			{{ render tp_navigation(tp) }}
+		{{ end }}
 {{ end }}
 
 {{ define tp_foot(struct template *tp) }}
@@ -84,6 +90,44 @@ gemini://{{ pc->proxy_name }}{{ path }}
 	{{ end }}
 	</body>
 </html>
+{{ end }}
+
+{{ define tp_navigation(struct template *tp) }}
+{!
+	struct client	*clt = tp->tp_arg;
+	const char	*prfx = clt->clt_script_name;
+	char		*path = clt->clt_path_info;
+	char		*tilde, *t, home[GEMINI_MAXLEN], up[GEMINI_MAXLEN];
+	char		*dname;
+	char		 c;
+
+	*home = '\0';
+	if ((tilde = strstr(path, "/~")) != NULL &&
+	    (t = strchr(tilde + 1, '/')) != NULL) {
+		c = *++t;
+		*t = '\0';
+		(void) strlcpy(home, path + 1, sizeof(home));
+		*t = c;
+	}
+
+	(void) strlcpy(up, path + 1, sizeof(up));
+	dname = dirname(up);
+!}
+<header>
+	<nav>
+		<ul>
+			<li><a href="{{ prfx }}">Root</a></li>
+
+			{{ if *home != '\0' }}
+			<li><a href="{{ prfx }}{{ home }}">Home</a></li>
+			{{ end }}
+
+			{{ if strcmp(dname, ".") != 0 }}
+			<li><a href="{{ prfx }}{{ dname }}/">Up</a></li>
+			{{ end }}
+		</ul>
+	</nav>
+</header>
 {{ end }}
 
 {{ define tp_figure(struct template *tp, const char *url, const char *label) }}

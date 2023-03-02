@@ -8,6 +8,17 @@ body {
 	padding: 1rem;
 }
 
+header nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+header nav ul li {
+    display: inline-block;
+    margin-right: 10px;
+}
+
 h1, h2, h3 {
 	margin: 2rem 0 1rem;
 }
