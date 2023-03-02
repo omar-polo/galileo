@@ -95,10 +95,10 @@ gemini://{{ pc->proxy_name }}{{ path }}
 {{ define tp_navigation(struct template *tp) }}
 {!
 	struct client	*clt = tp->tp_arg;
-	const char	*prfx = clt->clt_script_name;
+	const char	*dname, *dsufx = "/", *prfx = clt->clt_script_name;
 	char		*path = clt->clt_path_info;
 	char		*tilde, *t, home[GEMINI_MAXLEN], up[GEMINI_MAXLEN];
-	char		*dname;
+	char		 usr[64];
 	char		 c;
 
 	*home = '\0';
@@ -108,22 +108,33 @@ gemini://{{ pc->proxy_name }}{{ path }}
 		*t = '\0';
 		(void) strlcpy(home, path + 1, sizeof(home));
 		*t = c;
+
+		c = *--t;
+		*t = '\0';
+		(void) strlcpy(usr, tilde + 2, sizeof(usr));
+		*t = c;
 	}
 
 	(void) strlcpy(up, path + 1, sizeof(up));
 	dname = dirname(up);
+	if (!strcmp(dname, ".")) {
+		dname = "";
+		dsufx = "";
+	}
 !}
 <header>
 	<nav>
 		<ul>
 			<li><a href="{{ prfx }}">/ Root</a></li>
 
-			{{ if *home != '\0' }}
-			<li><a href="{{ prfx }}{{ home }}">🏠 Home</a></li>
-			{{ end }}
+			<li><a href="{{ prfx }}{{ dname }}{{ dsufx }}">
+				↑ Up
+			</a></li>
 
-			{{ if strcmp(dname, ".") != 0 }}
-			<li><a href="{{ prfx }}{{ dname }}/">↑ Up</a></li>
+			{{ if *home != '\0' }}
+			<li><a href="{{ prfx }}{{ home }}">
+				🏠 {{usr}}' home
+			</a></li>
 			{{ end }}
 		</ul>
 	</nav>
