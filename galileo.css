@@ -16,7 +16,8 @@ header nav ul {
 
 header nav ul li {
 	display: inline-block;
-	margin-right: 20px;
+	margin: 5px;
+	padding: 0 10px;
 }
 
 header nav a {
