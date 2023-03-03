@@ -79,6 +79,16 @@ Defaults to
 with prepended the URL prefix on which
 .Xr galileo 8
 is served.
+.It Ic no footer
+Do not add a footer with the original link at the bottom of the
+generated page.
+.It Ic no image preview
+Do not generate a preview for links that seem to point to an image.
+.Nm galileo
+uses an heuristic to determine if a link points to an image that may
+be inappropriate and not work in some circumstances.
+.It Ic no navigation bar
+Do no add a navigation bar at the top of the generated page.
 .It Ic no tls
 Do not setup the TLS layer.
 Useful for saving some CPU cycles when connecting to a Gemini server

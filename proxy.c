@@ -242,6 +242,17 @@ proxy_resurl(struct client *clt, const char *url, char *buf, size_t len)
 	return (0);
 }
 
+static inline int
+match_image_heur(const char *url)
+{
+	return (fnmatch("*.jpg", url, 0) == 0 ||
+	    fnmatch("*.jpeg", url, 0) == 0 ||
+	    fnmatch("*.gif", url, 0) == 0 ||
+	    fnmatch("*.png", url, 0) == 0 ||
+	    fnmatch("*.svg", url, 0) == 0 ||
+	    fnmatch("*.webp", url, 0) == 0);
+}
+
 static int
 gemtext_translate_line(struct client *clt, char *line)
 {
@@ -309,12 +320,8 @@ gemtext_translate_line(struct client *clt, char *line)
 		else
 			url = line; /* leave the URL as it is */
 
-		if (fnmatch("*.jpg", url, 0) == 0 ||
-		    fnmatch("*.jpeg", url, 0) == 0 ||
-		    fnmatch("*.gif", url, 0) == 0 ||
-		    fnmatch("*.png", url, 0) == 0 ||
-		    fnmatch("*.svg", url, 0) == 0 ||
-		    fnmatch("*.webp", url, 0) == 0) {
+		if (!(clt->clt_pc->flags & PROXY_NO_IMGPRV) &&
+		    match_image_heur(url)) {
 			if (clt->clt_translate & TR_NAV) {
 				if (clt_puts(clt, "</ul></nav>") == -1)
 					return (-1);
@@ -590,7 +597,7 @@ done:
 		goto err;
 	}
 
-	if (!clt->clt_pc->no_tls) {
+	if (!(clt->clt_pc->flags & PROXY_NO_TLS)) {
 		/* initialize TLS for Gemini */
 		if ((conf = tls_config_new()) == NULL) {
 			log_warn("tls_config_new failed");

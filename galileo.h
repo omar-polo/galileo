@@ -134,7 +134,12 @@ struct proxy_config {
 	char		 proxy_addr[HOST_NAME_MAX + 1];
 	char		 proxy_name[HOST_NAME_MAX + 1];
 	char		 proxy_port[6];
-	int		 no_tls;
+
+#define PROXY_NO_TLS	0x1
+#define PROXY_NO_NAVBAR	0x2
+#define PROXY_NO_FOOTER	0x4
+#define PROXY_NO_IMGPRV	0x8
+	int		 flags;
 };
 
 struct proxy {

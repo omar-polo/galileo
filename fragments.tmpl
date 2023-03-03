@@ -43,6 +43,9 @@ static int tp_navigation(struct template *);
 	const char *stylesheet = pc ? pc->stylesheet : "";
 	const char *prfx = clt->clt_script_name;
 	const char *path = clt->clt_path_info;
+	int hidenav;
+
+	hidenav = pc ? pc->flags & PROXY_NO_NAVBAR : 0;
 !}
 <!doctype html>
 <html{{ if *lang != '\0' }}{{ " " }}lang="{{ lang }}"{{ end }}>
@@ -64,7 +67,7 @@ static int tp_navigation(struct template *);
 		</title>
 	</head>
 	<body>
-		{{ if path }}
+		{{ if path && !hidenav }}
 			{{ render tp_navigation(tp) }}
 		{{ end }}
 {{ end }}
@@ -74,8 +77,11 @@ static int tp_navigation(struct template *);
 	struct client *clt = tp->tp_arg;
 	struct proxy_config *pc = clt->clt_pc;
 	const char *path = clt->clt_path_info;
+	int hidefoot;
+
+	hidefoot = pc ? pc->flags & PROXY_NO_FOOTER : 0;
 !}
-	{{ if pc }}
+	{{ if pc && !hidefoot }}
 		<footer>
 			<hr />
 			<dl>

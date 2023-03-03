@@ -103,7 +103,8 @@ typedef struct {
 %}
 
 %token	INCLUDE ERROR
-%token	CHROOT HOSTNAME NO PORT PREFORK PROXY SOURCE STYLESHEET TLS
+%token	BAR CHROOT FOOTER HOSTNAME IMAGE NAVIGATION NO PORT
+%token	PREFORK PREVIEW PROXY SOURCE STYLESHEET TLS
 %token	<v.number>	NUMBER
 %token	<v.string>	STRING
 %type	<v.number>	port
@@ -245,8 +246,17 @@ proxyoptsl	: SOURCE STRING proxyport {
 				yyerror("stylesheet path too long!");
 			free($2);
 		}
+		| NO FOOTER {
+			pr->pr_conf.flags |= PROXY_NO_FOOTER;
+		}
+		| NO IMAGE PREVIEW {
+			pr->pr_conf.flags |= PROXY_NO_IMGPRV;
+		}
+		| NO NAVIGATION BAR {
+			pr->pr_conf.flags |= PROXY_NO_NAVBAR;
+		}
 		| NO TLS {
-			pr->pr_conf.no_tls = 1;
+			pr->pr_conf.flags |= PROXY_NO_TLS;
 		}
 		;
 
@@ -335,12 +345,17 @@ lookup(char *s)
 {
 	/* this has to be sorted always */
 	static const struct keywords keywords[] = {
+		{ "bar",	BAR },
 		{ "chroot",	CHROOT },
+		{ "footer",	FOOTER },
 		{ "hostname",	HOSTNAME },
+		{ "image",	IMAGE },
 		{ "include",	INCLUDE },
+		{ "navigation",	NAVIGATION },
 		{ "no",		NO },
 		{ "port",	PORT },
 		{ "prefork",	PREFORK },
+		{ "preview",	PREVIEW },
 		{ "proxy",	PROXY },
 		{ "source",	SOURCE },
 		{ "stylesheet",	STYLESHEET},
