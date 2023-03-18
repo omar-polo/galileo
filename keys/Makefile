@@ -1,8 +1,9 @@
-NEXTV =		03
+NEXTV =		04
 
 DISTFILES =	Makefile \
 		galileo-01.pub \
-		galileo-02.pub
+		galileo-02.pub \
+		galileo-03.pub
 
 all:
 	false
