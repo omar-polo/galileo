@@ -63,7 +63,7 @@ const char *conffile = GALILEO_CONF;
 static __dead void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-dnv] [-D macro=value] [-f file]",
+	fprintf(stderr, "usage: %s [-dnv] [-D macro=value] [-f file]\n",
 	    getprogname());
 	exit(1);
 }
