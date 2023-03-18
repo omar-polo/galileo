@@ -67,7 +67,7 @@ y.tab.c: parse.y
 
 # -- maintainer targets --
 
-PRIVKEY =	set-PRIVKEY
+PRIVKEY =	missing-PRIVKEY
 DISTFILES =	CHANGES \
 		Makefile \
 		README \
