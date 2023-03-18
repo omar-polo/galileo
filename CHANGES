@@ -1,2 +1,11 @@
+* galileo 0.2; 2023-03-18
+- correct "FastCGI" spelling
+- link WAIT_ANY tests in the build
+- various improvements to the template engine
+- don't rebuild `template' unless strictly needed
+- add a navigation bar
+- fix styling for consequent blockquotes
+- allow to disable the navbar, footer and image preview
+
 * galileo 0.1; 2022-11-12
 - initial release
