@@ -610,8 +610,7 @@ fcgi_read(struct bufferevent *bev, void *d)
 			}
 			break;
 		case FCGI_STDIN:
-			if (clt == NULL ||
-			    clt->clt_method != METHOD_POST) {
+			if (clt == NULL || clt->clt_method != METHOD_POST) {
 				evbuffer_drain(src, fcgi->fcg_toread);
 				break;
 			}
