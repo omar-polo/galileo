@@ -253,6 +253,7 @@ fcgi_accept(int fd, short event, void *arg)
 	if (fcgi->fcg_bev == NULL)
 		goto err;
 
+	SPLAY_INSERT(fcgi_tree, &env->sc_fcgi_socks, fcgi);
 	bufferevent_enable(fcgi->fcg_bev, EV_READ | EV_WRITE);
 	return;
 
