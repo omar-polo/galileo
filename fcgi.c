@@ -449,6 +449,7 @@ fcgi_parse_form(struct fcgi *fcgi, struct client *clt, struct evbuffer *src)
 			clt->clt_body = NULL;
 			return (0);
 		}
+		free(a);
 		clt->clt_bodylen += strlen(tmp);
 		return (0);
 	}
