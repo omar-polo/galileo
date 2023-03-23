@@ -6,6 +6,8 @@ body {
 	margin: 0 auto;
 	border: 0;
 	padding: 1rem;
+
+	overflow-wrap: anywhere;
 }
 
 header nav ul {
