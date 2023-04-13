@@ -676,6 +676,8 @@ parse_mime(struct client *clt, char *mime, char *lang, size_t len)
 {
 	char			*t, *semi;
 
+	memset(lang, 0, len);
+
 	if (strncmp(mime, "text/gemini", 11) != 0)
 		return (0);
 
