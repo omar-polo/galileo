@@ -5,7 +5,8 @@ REGRESS_TARGETS =	00-empty \
 			04-flow \
 			05-loop \
 			06-escape \
-			07-printf
+			07-printf \
+			08-dangling
 
 REGRESS_SETUP_ONCE =	setup-comp
 REGRESS_CLEANUP =	clean-comp
@@ -56,5 +57,9 @@ clean-comp:
 07-printf: 07-printf.o runbase.o tmpl.o
 	${CC} 07-printf.o runbase.o tmpl.o -o t && ./t > got
 	diff -u ${.CURDIR}/07.expected got
+
+08-dangling: 08-dangling.o runbase.o tmpl.o
+	${CC} 08-dangling.o runbase.o tmpl.o -o t && ./t > got
+	diff -u ${.CURDIR}/08.expected got
 
 .include <bsd.regress.mk>
