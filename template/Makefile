@@ -30,4 +30,7 @@ dist: ${DISTFILES}
 	mkdir -p ${DESTDIR}/
 	${INSTALL} -m 0644 ${DISTFILES} ${DESTDIR}/
 
-.PHONY: all clean distclean dist
+regress:
+	${MAKE} -C regress
+
+.PHONY: all clean distclean dist regress
