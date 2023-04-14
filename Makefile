@@ -26,6 +26,9 @@ MAN =		${PROG}.conf.5 ${PROG}.8
 all: ${PROG}
 .PHONY: all clean distclean install uninstall
 
+tags: ${SRCS}
+	ctags ${SRCS}
+
 clean:
 	rm -f *.[do] y.tab.* compat/*.[do] tests/*.[do] fragments.c
 	${MAKE} -C template clean
