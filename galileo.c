@@ -172,8 +172,9 @@ main(int argc, char **argv)
 
 	log_info("startup");
 
-	/* if (pledge("stdio rpath wpath cpath unix fattr sendfd", NULL) == -1) */
-		/* fatal("pledge"); */
+	if (pledge("stdio rpath wpath cpath chown unix fattr sendfd", NULL)
+	    == -1)
+		fatal("pledge");
 
 	event_init();
 
