@@ -96,7 +96,11 @@ DISTFILES =	CHANGES \
 
 .PHONY: release dist
 
-release: ${DISTNAME}.sha256.sig
+release:
+	sed -i -e '/^RELEASE=/s/no/yes/' configure
+	${MAKE} ${DISTNAME}.sha256.sig
+	sed -i -e '/^RELEASE=/s/yes/no/' configure
+
 dist: ${DISTNAME}.sha256
 
 ${DISTNAME}.sha256.sig: ${DISTNAME}.sha256

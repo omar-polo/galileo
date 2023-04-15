@@ -18,7 +18,7 @@
 
 set -e
 
-RELEASE="${RELEASE:-no}"
+RELEASE=no
 
 usage()
 {
