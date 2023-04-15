@@ -1,3 +1,11 @@
+* galileo 0.3; 2023-04-15
+- fixed a few memory leaks
+- adjust text wrapping with CSS
+- minor improvements to the template engine
+- properly initialize the `lang' buffer
+- pledge(2) the main process
+- ensure that -Werror is not used in release tarballs
+
 * galileo 0.2; 2023-03-18
 - correct "FastCGI" spelling
 - link WAIT_ANY tests in the build
