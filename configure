@@ -135,6 +135,7 @@ COMPATS=
 HAVE_ACCEPT4=
 HAVE_ASR_RUN=
 HAVE_BUFFEREVENT_READ_PRESSURE_CB=
+HAVE_ENDIAN=0
 HAVE_ERR=
 HAVE_EVENT_ASR_RUN=
 HAVE_FREEZERO=
@@ -145,6 +146,7 @@ HAVE_GETPROGNAME=
 HAVE_IMSG=
 HAVE_LIBEVENT=
 HAVE_LIBEVENT2=
+HAVE_MACHINE_ENDIAN=0
 HAVE_PLEDGE=
 HAVE_REALLOCARRAY=
 HAVE_RECALLOCARRAY=
@@ -155,6 +157,7 @@ HAVE_SETRESUID=
 HAVE_STRLCAT=
 HAVE_STRLCPY=
 HAVE_STRTONUM=
+HAVE_SYS_ENDIAN=0
 HAVE_SYS_QUEUE=
 HAVE_SYS_TREE=
 HAVE_UNVEIL=
@@ -264,6 +267,18 @@ if ! singletest WAIT_ANY WAIT_ANY; then
 	CFLAGS="${CFLAGS} -DWAIT_ANY=-1"
 fi
 
+runtest endian		ENDIAN || \
+runtest machine_endian	MACHINE_ENDIAN || \
+runtest sys_endian	SYS_ENDIAN || true
+
+if [ "${HAVE_ENDIAN}" -eq 0 -a \
+     "${HAVE_SYS_ENDIAN}" -eq 0 -a \
+     "${HAVE_MACHINE_ENDIAN}" -eq 0 ]; then
+	echo "FATAL: no endian header found" 1>&2
+	echo "FATAL: no endian header found" 1>&3
+	exit 1
+fi
+
 runtest accept4		ACCEPT4 -D_GNU_SOURCE			|| true
 runtest asr_run		ASR_RUN "" "-lasr"			|| true
 runtest err		ERR					|| true
@@ -329,6 +344,10 @@ fi
 
 # things we can provide by ourselves:
 
+if [ "${HAVE_ENDIAN}" -eq 0 ]; then
+	CFLAGS="-I compat/endian ${CFLAGS}"
+fi
+
 if [ "${HAVE_IMSG}" -eq 0 ]; then
 	CFLAGS="-I compat/imsg ${CFLAGS}"
 	COMPATS="compat/imsg/imsg.c compat/imsg/imsg-buffer.c ${COMPATS}"
@@ -356,6 +375,7 @@ cat <<EOF
 #define HAVE_ACCEPT4		${HAVE_ACCEPT4}
 #define HAVE_ASR_RUN		${HAVE_ASR_RUN}
 #define HAVE_BUFFEREVENT_READ_PRESSURE_CB ${HAVE_BUFFEREVENT_READ_PRESSURE_CB}
+#define HAVE_ENDIAN		${HAVE_ENDIAN}
 #define HAVE_ERR		${HAVE_ERR}
 #define HAVE_EVENT_ASR_RUN	${HAVE_EVENT_ASR_RUN}
 #define HAVE_FREEZERO		${HAVE_FREEZERO}
@@ -366,6 +386,7 @@ cat <<EOF
 #define HAVE_IMSG		${HAVE_IMSG}
 #define HAVE_LIBEVENT		${HAVE_LIBEVENT}
 #define HAVE_LIBEVENT2		${HAVE_LIBEVENT2}
+#define HAVE_MACHINE_ENDIAN	${HAVE_MACHINE_ENDIAN}
 #define HAVE_PLEDGE		${HAVE_PLEDGE}
 #define HAVE_REALLOCARRAY	${HAVE_REALLOCARRAY}
 #define HAVE_RECALLOCARRAY	${HAVE_RECALLOCARRAY}
@@ -376,6 +397,7 @@ cat <<EOF
 #define HAVE_STRLCAT		${HAVE_STRLCAT}
 #define HAVE_STRLCPY		${HAVE_STRLCPY}
 #define HAVE_STRTONUM		${HAVE_STRTONUM}
+#define HAVE_SYS_ENDIAN		${HAVE_SYS_ENDIAN}
 #define HAVE_SYS_QUEUE		${HAVE_SYS_QUEUE}
 #define HAVE_SYS_TREE		${HAVE_SYS_TREE}
 #define HAVE_UNVEIL		${HAVE_UNVEIL}
