@@ -103,7 +103,6 @@ struct client {
 	int			 clt_translate;
 
 	char			 clt_buf[1024];
-	size_t			 clt_buflen;
 
 	SPLAY_ENTRY(client)	 clt_nodes;
 };
@@ -185,16 +184,9 @@ void	 fcgi_read(struct bufferevent *, void *);
 void	 fcgi_write(struct bufferevent *, void *);
 void	 fcgi_error(struct bufferevent *, short error, void *);
 void	 fcgi_free(struct fcgi *);
-int	 clt_putc(struct client *, char);
-int	 clt_puts(struct client *, const char *);
 int	 clt_write_bufferevent(struct client *, struct bufferevent *);
 int	 clt_flush(struct client *);
-int	 clt_write(struct client *, const uint8_t *, size_t);
-int	 clt_printf(struct client *, const char *, ...)
-	     __attribute__((__format__(printf, 2, 3)))
-	     __attribute__((__nonnull__(2)));
-int	 clt_tp_puts(struct template *, const char *);
-int	 clt_tp_putc(struct template *, int);
+int	 clt_write(void *, const void *, size_t);
 int	 fcgi_cmp(struct fcgi *, struct fcgi *);
 int	 fcgi_client_cmp(struct client *, struct client *);
 

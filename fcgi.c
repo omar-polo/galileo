@@ -38,6 +38,8 @@
 
 #define MIN(a, b)	((a) < (b) ? (a) : (b))
 
+#define FCGI_MAX_CONTENT_SIZE	65535
+
 struct fcgi_header {
 	unsigned char version;
 	unsigned char type;
@@ -576,7 +578,8 @@ fcgi_read(struct bufferevent *bev, void *d)
 				break;
 			}
 
-			clt->clt_tp = template(clt, clt_tp_puts, clt_tp_putc);
+			clt->clt_tp = template(clt, clt_write, clt->clt_buf,
+			    sizeof(clt->clt_buf));
 			if (clt->clt_tp == NULL) {
 				free(clt);
 				log_warn("template");
@@ -687,135 +690,62 @@ fcgi_free(struct fcgi *fcgi)
 int
 clt_flush(struct client *clt)
 {
+	return (template_flush(clt->clt_tp));
+}
+
+static inline int
+dowrite(struct client *clt, const void *data, size_t len)
+{
 	struct fcgi		*fcgi = clt->clt_fcgi;
 	struct bufferevent	*bev = fcgi->fcg_bev;
 	struct fcgi_header	 hdr;
-
-	if (clt->clt_buflen == 0)
-		return (0);
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.version = FCGI_VERSION_1;
 	hdr.type = FCGI_STDOUT;
 	hdr.req_id0 = (clt->clt_id & 0xFF);
 	hdr.req_id1 = (clt->clt_id >> 8);
-	hdr.content_len0 = (clt->clt_buflen & 0xFF);
-	hdr.content_len1 = (clt->clt_buflen >> 8);
+	hdr.content_len0 = (len & 0xFF);
+	hdr.content_len1 = (len >> 8);
 
 	if (bufferevent_write(bev, &hdr, sizeof(hdr)) == -1 ||
-	    bufferevent_write(bev, clt->clt_buf, clt->clt_buflen) == -1) {
+	    bufferevent_write(bev, clt->clt_buf, len) == -1) {
 		fcgi_error(bev, EV_WRITE, fcgi);
 		return (-1);
 	}
 
-	clt->clt_buflen = 0;
-
 	return (0);
 }
 
 int
-clt_write(struct client *clt, const uint8_t *buf, size_t len)
+clt_write(void *arg, const void *d, size_t len)
 {
-	size_t			 left, copy;
+	struct client	*clt = arg;
+	const char	*data = d;
+	size_t		 avail;
 
 	while (len > 0) {
-		left = sizeof(clt->clt_buf) - clt->clt_buflen;
-		if (left == 0) {
-			if (clt_flush(clt) == -1)
-				return (-1);
-			left = sizeof(clt->clt_buf);
-		}
-
-		copy = MIN(left, len);
-
-		memcpy(&clt->clt_buf[clt->clt_buflen], buf, copy);
-		clt->clt_buflen += copy;
-		buf += copy;
-		len -= copy;
+		avail = MIN(len, FCGI_MAX_CONTENT_SIZE);
+		if (dowrite(clt, data, avail) == -1)
+			return (-1);
+		data += avail;
+		len -= avail;
 	}
 
 	return (0);
-}
-
-int
-clt_putc(struct client *clt, char ch)
-{
-	return (clt_write(clt, &ch, 1));
-}
-
-int
-clt_puts(struct client *clt, const char *str)
-{
-	return (clt_write(clt, str, strlen(str)));
 }
 
 int
 clt_write_bufferevent(struct client *clt, struct bufferevent *bev)
 {
 	struct evbuffer		*src = EVBUFFER_INPUT(bev);
-	size_t			 len, left, copy;
+	size_t			 len;
+	int			 ret;
 
 	len = EVBUFFER_LENGTH(src);
-	while (len > 0) {
-		left = sizeof(clt->clt_buf) - clt->clt_buflen;
-		if (left == 0) {
-			if (clt_flush(clt) == -1)
-				return (-1);
-			left = sizeof(clt->clt_buf);
-		}
-
-		copy = bufferevent_read(bev, &clt->clt_buf[clt->clt_buflen],
-		    MIN(left, len));
-		clt->clt_buflen += copy;
-
-		len = EVBUFFER_LENGTH(src);
-	}
-
-	return (0);
-}
-
-int
-clt_printf(struct client *clt, const char *fmt, ...)
-{
-	struct fcgi		*fcgi = clt->clt_fcgi;
-	struct bufferevent	*bev = fcgi->fcg_bev;
-	char			*str;
-	va_list			 ap;
-	int			 r;
-
-	va_start(ap, fmt);
-	r = vasprintf(&str, fmt, ap);
-	va_end(ap);
-	if (r == -1) {
-		fcgi_error(bev, EV_WRITE, fcgi);
-		return (-1);
-	}
-
-	r = clt_write(clt, str, r);
-	free(str);
-	return (r);
-}
-
-int
-clt_tp_puts(struct template *tp, const char *str)
-{
-	struct client		*clt = tp->tp_arg;
-
-	if (clt_puts(clt, str) == -1)
-		return (-1);
-
-	return (0);
-}
-
-int
-clt_tp_putc(struct template *tp, int c)
-{
-	struct client		*clt = tp->tp_arg;
-
-	if (clt_putc(clt, c) == -1)
-		return (-1);
-
-	return (0);
+	ret = clt_write(clt, EVBUFFER_DATA(src), len);
+	evbuffer_drain(src, len);
+	return (ret);
 }
 
 int

@@ -256,6 +256,7 @@ match_image_heur(const char *url)
 static int
 gemtext_translate_line(struct client *clt, char *line)
 {
+	struct template	*tp = clt->clt_tp;
 	char		 buf[1025];
 	char		*url;
 
@@ -268,32 +269,32 @@ gemtext_translate_line(struct client *clt, char *line)
 
 		if (tp_htmlescape(clt->clt_tp, line) == -1)
 			return (-1);
-		return (clt_putc(clt, '\n'));
+		return (tp_write(tp, "\n", 1));
 	}
 
 	/* bullet */
 	if (!strncmp(line, "* ", 2)) {
 		if (clt->clt_translate & TR_NAV) {
-			if (clt_puts(clt, "</ul></nav>") == -1)
+			if (tp_writes(tp, "</ul></nav>") == -1)
 				return (-1);
 			clt->clt_translate &= ~TR_NAV;
 		}
 
 		if (!(clt->clt_translate & TR_LIST)) {
-			if (clt_puts(clt, "<ul>") == -1)
+			if (tp_writes(tp, "<ul>") == -1)
 				return (-1);
 			clt->clt_translate |= TR_LIST;
 		}
 
-		if (clt_puts(clt, "<li>") == -1 ||
+		if (tp_writes(tp, "<li>") == -1 ||
 		    tp_htmlescape(clt->clt_tp, line + 2) == -1 ||
-		    clt_puts(clt, "</li>") == -1)
+		    tp_writes(tp, "</li>") == -1)
 			return (-1);
 		return (0);
 	}
 
 	if (clt->clt_translate & TR_LIST) {
-		if (clt_puts(clt, "</ul>") == -1)
+		if (tp_writes(tp, "</ul>") == -1)
 			return (-1);
 		clt->clt_translate &= ~TR_LIST;
 	}
@@ -323,37 +324,37 @@ gemtext_translate_line(struct client *clt, char *line)
 		if (!(clt->clt_pc->flags & PROXY_NO_IMGPRV) &&
 		    match_image_heur(url)) {
 			if (clt->clt_translate & TR_NAV) {
-				if (clt_puts(clt, "</ul></nav>") == -1)
+				if (tp_writes(tp, "</ul></nav>") == -1)
 					return (-1);
 				clt->clt_translate &= ~TR_NAV;
 			}
 
-			if (tp_figure(clt->clt_tp, url, label) == -1)
+			if (tp_figure(tp, url, label) == -1)
 				return (-1);
 
 			return (0);
 		}
 
 		if (!(clt->clt_translate & TR_NAV)) {
-			if (clt_puts(clt, "<nav><ul>") == -1)
+			if (tp_writes(tp, "<nav><ul>") == -1)
 				return (-1);
 			clt->clt_translate |= TR_NAV;
 		}
 
-		if (clt_puts(clt, "<li><a href='") == -1)
+		if (tp_writes(tp, "<li><a href='") == -1)
 			return (-1);
 
 		if (tp_urlescape(clt->clt_tp, url) == -1 ||
-		    clt_puts(clt, "'>") == -1 ||
+		    tp_writes(tp, "'>") == -1 ||
 		    tp_htmlescape(clt->clt_tp, label) == -1 ||
-		    clt_puts(clt, "</a></li>") == -1)
+		    tp_writes(tp, "</a></li>") == -1)
 			return (-1);
 
 		return (0);
 	}
 
 	if (clt->clt_translate & TR_NAV) {
-		if (clt_puts(clt, "</ul></nav>") == -1)
+		if (tp_writes(tp, "</ul></nav>") == -1)
 			return (-1);
 		clt->clt_translate &= ~TR_NAV;
 	}
@@ -364,37 +365,37 @@ gemtext_translate_line(struct client *clt, char *line)
 		line += strspn(line, " \t");
 
 		clt->clt_translate |= TR_PRE;
-		return (tp_pre_open(clt->clt_tp, line));
+		return (tp_pre_open(tp, line));
 	}
 
 	/* citation block */
 	if (*line == '>') {
-		if (clt_puts(clt, "<blockquote>") == -1 ||
+		if (tp_writes(tp, "<blockquote>") == -1 ||
 		    tp_htmlescape(clt->clt_tp, line + 1) == -1 ||
-		    clt_puts(clt, "</blockquote>") == -1)
+		    tp_writes(tp, "</blockquote>") == -1)
 			return (-1);
 		return (0);
 	}
 
 	/* headings */
 	if (!strncmp(line, "###", 3)) {
-		if (clt_puts(clt, "<h3>") == -1 ||
+		if (tp_writes(tp, "<h3>") == -1 ||
 		    tp_htmlescape(clt->clt_tp, line + 3) == -1 ||
-		    clt_puts(clt, "</h3>") == -1)
+		    tp_writes(tp, "</h3>") == -1)
 			return (-1);
 		return (0);
 	}
 	if (!strncmp(line, "##", 2)) {
-		if (clt_puts(clt, "<h2>") == -1 ||
+		if (tp_writes(tp, "<h2>") == -1 ||
 		    tp_htmlescape(clt->clt_tp, line + 2) == -1 ||
-		    clt_puts(clt, "</h2>") == -1)
+		    tp_writes(tp, "</h2>") == -1)
 			return (-1);
 		return (0);
 	}
 	if (!strncmp(line, "#", 1)) {
-		if (clt_puts(clt, "<h1>") == -1 ||
+		if (tp_writes(tp, "<h1>") == -1 ||
 		    tp_htmlescape(clt->clt_tp, line + 1) == -1 ||
-		    clt_puts(clt, "</h1>") == -1)
+		    tp_writes(tp, "</h1>") == -1)
 			return (-1);
 		return (0);
 	}
@@ -404,9 +405,9 @@ gemtext_translate_line(struct client *clt, char *line)
 		return (0);
 
 	/* paragraph */
-	if (clt_puts(clt, "<p>") == -1 ||
+	if (tp_writes(tp, "<p>") == -1 ||
 	    tp_htmlescape(clt->clt_tp, line) == -1 ||
-	    clt_puts(clt, "</p>") == -1)
+	    tp_writes(tp, "</p>") == -1)
 		return (-1);
 
 	return (0);
@@ -721,23 +722,24 @@ parse_mime(struct client *clt, char *mime, char *lang, size_t len)
 int
 proxy_start_reply(struct client *clt, int status, const char *ctype)
 {
+	struct template	*tp = clt->clt_tp;
 	const char	*csp;
 
 	csp = "Content-Security-Policy: default-src 'self'; "
 	    "script-src 'none'; object-src 'none';\r\n";
 
 	if (status != 200 &&
-	    clt_printf(clt, "Status: %d\r\n", status) == -1)
+	    tp_writef(tp, "Status: %d\r\n", status) == -1)
 		return (-1);
 
-	if (clt_puts(clt, csp) == -1)
+	if (tp_writes(tp, csp) == -1)
 		return (-1);
 
 	if (status == 302) {
 		/* use "ctype" as redirect target */
-		if (clt_printf(clt, "Location: %s\r\n", ctype) == -1)
+		if (tp_writef(tp, "Location: %s\r\n", ctype) == -1)
 			return (-1);
-		if (clt_puts(clt, "\r\n") == -1)
+		if (tp_writes(tp, "\r\n") == -1)
 			return (-1);
 		return (0);
 	}
@@ -745,12 +747,12 @@ proxy_start_reply(struct client *clt, int status, const char *ctype)
 	if (ctype != NULL) {
 		if (!strcmp(ctype, "text/html"))
 			ctype = "text/html;charset=utf-8";
-		if (clt_printf(clt, "Content-Type: %s\r\n", ctype)
+		if (tp_writef(tp, "Content-Type: %s\r\n", ctype)
 		    == -1)
 			return (-1);
 	}
 
-	if (clt_puts(clt, "\r\n") == -1)
+	if (tp_writes(tp, "\r\n") == -1)
 		return (-1);
 
 	return (0);
@@ -837,7 +839,7 @@ proxy_read(struct bufferevent *bev, void *d)
 	else
 		ctype = mime;
 
-	if (clt_printf(clt, "Content-Type: %s\r\n\r\n", ctype) == -1)
+	if (tp_writef(clt->clt_tp, "Content-Type: %s\r\n\r\n", ctype) == -1)
 		goto err;
 
 	clt->clt_headersdone = 1;
@@ -868,6 +870,7 @@ void
 proxy_error(struct bufferevent *bev, short err, void *d)
 {
 	struct client		*clt = d;
+	struct template		*tp = clt->clt_tp;
 	int			 status = !(err & EVBUFFER_EOF);
 
 	log_debug("proxy error, shutting down the connection (err: %x)",
@@ -886,13 +889,13 @@ proxy_error(struct bufferevent *bev, short err, void *d)
 		}
 
 		if (clt->clt_translate & TR_LIST) {
-			if (clt_puts(clt, "</ul>") == -1)
+			if (tp_writes(tp, "</ul>") == -1)
 				return;
 			clt->clt_translate &= ~TR_LIST;
 		}
 
 		if (clt->clt_translate & TR_NAV) {
-			if (clt_puts(clt, "</ul></nav>") == -1)
+			if (tp_writes(tp, "</ul></nav>") == -1)
 				return;
 			clt->clt_translate &= ~TR_NAV;
 		}
