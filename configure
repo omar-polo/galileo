@@ -54,16 +54,18 @@ while [ $# -gt 0 ]; do
 		usage
 	fi
 
-	if [ "$key" = --prefix ]; then
-		key=PREFIX
-		if [ "$1" = --prefix ]; then # no =, look at next arg
-			if !shift 2>&1 >/dev/null; then
-				echo "$0: missing value for --prefix" >&2
-				exit 1
-			fi
-			val="$1"
+	if [ "$key" = "$1" ]; then
+		# if no --xy=, look at the next arg
+		if ! shift 2>/dev/null; then
+			echo "$0: missing value for $key" >&2
+			exit 1
 		fi
+		val="$1"
 	fi
+	case "$key" in
+	--mandir)	key=MANDIR ;;
+	--prefix)	key=PREFIX ;;
+	esac
 
 	if [ "$1" = "$key" ]; then
 		echo "$0: invalid key-value: $1" >&2
@@ -85,8 +87,12 @@ while [ $# -gt 0 ]; do
 		LDADD_LIBEVENT="$val" ;;
 	LDADD_LIBSOCKET)
 		LDADD_LIBSOCKET="$val" ;;
+	MANDIR)
+		MANDIR="$val" ;;
 	PKG_CONFIG)
 		pkgconfig="$val" ;;
+	PREFIX)
+		PREFIX="$val" ;;
 	SOCK)
 		sock="$val" ;;
 	USER)
@@ -410,12 +416,16 @@ EOF
 exec > config.mk
 echo "config.mk: writing..." >&2
 
+[ -z "${MANDIR}" ] && MANDIR="\${PREFIX}/man"
+
 cat <<EOF
 CC=		${CC}
 CFLAGS=		${CFLAGS}
 LIBS=		${LIBS}
 LDFLAGS=	${LDFLAGS}
 YACC=		${YACC}
+PREFIX=		${PREFIX}
+MANDIR=		${MANDIR}
 
 COMPATS=	${COMPATS}
 

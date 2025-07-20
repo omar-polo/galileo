@@ -2,9 +2,7 @@ include config.mk
 
 # -- options --
 
-PREFIX =	/usr/local
 SBINDIR =	${PREFIX}/sbin
-MANDIR =	${PREFIX}/man
 WWWDIR =	/var/www/htdocs
 
 # -- build-related variables --
