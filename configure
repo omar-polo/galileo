@@ -62,15 +62,11 @@ while [ $# -gt 0 ]; do
 		fi
 		val="$1"
 	fi
+
 	case "$key" in
 	--mandir)	key=MANDIR ;;
 	--prefix)	key=PREFIX ;;
 	esac
-
-	if [ "$1" = "$key" ]; then
-		echo "$0: invalid key-value: $1" >&2
-		exit 1
-	fi
 
 	case "$key" in
 	CC)
