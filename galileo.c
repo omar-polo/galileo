@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Omar Polo <op@omarpolo.com>
+ * Copyright (c) 2022, 2023, 2025 Omar Polo <op@omarpolo.com>
  * Copyright (c) 2014 Reyk Floeter <reyk@openbsd.org>
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -26,6 +26,7 @@
 
 #include <errno.h>
 #include <event.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <locale.h>
 #include <pwd.h>
@@ -57,15 +58,51 @@ static struct privsep_proc procs[] = {
 };
 
 int privsep_process;
+int pidfd = -1;
 
 const char *conffile = GALILEO_CONF;
+static char *pidfile;
 
 static __dead void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-dnv] [-D macro=value] [-f file]\n",
+	fprintf(stderr, "usage: %s [-dnv] [-D macro=value] [-f file]"
+	    " [-P pidfile]\n",
 	    getprogname());
 	exit(1);
+}
+
+static void
+rmpidfile(void)
+{
+	unlink(pidfile);
+	close(pidfd);
+}
+
+static int
+write_pidfile(const char *path)
+{
+	struct flock	lock;
+	int		fd;
+
+	if ((fd = open(path, O_WRONLY|O_CREAT|O_CLOEXEC, 0600)) == -1)
+		fatal("can't open pidfile %s", path);
+
+	lock.l_start = 0;
+	lock.l_len = 0;
+	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
+
+	if (fcntl(fd, F_SETLK, &lock) == -1)
+		fatalx("can't lock %s, %s is already running?", path,
+		    getprogname());
+
+	if (ftruncate(fd, 0) == -1)
+		fatal("ftruncate %s", path);
+
+	dprintf(fd, "%d\n", getpid());
+
+	return fd;
 }
 
 int
@@ -87,7 +124,7 @@ main(int argc, char **argv)
 	log_init(1, LOG_DAEMON);
 	log_setverbose(verbose);
 
-	while ((ch = getopt(argc, argv, "D:df:I:nP:v")) != -1) {
+	while ((ch = getopt(argc, argv, "D:df:I:nP:T:v")) != -1) {
 		switch (ch) {
 		case 'D':
 			if (cmdline_symset(optarg) < 0)
@@ -110,6 +147,11 @@ main(int argc, char **argv)
 			conftest = 1;
 			break;
 		case 'P':
+			pidfile = optarg;
+			if (*pidfile != '/')
+				fatalx("pidfile is not an absolute path: %s", pidfile);
+			break;
+		case 'T':
 			title = optarg;
 			proc_id = proc_getid(procs, nitems(procs), title);
 			if (proc_id == PROC_MAX)
@@ -139,6 +181,12 @@ main(int argc, char **argv)
 	if (conftest) {
 		fprintf(stderr, "configuration OK\n");
 		return (0);
+	}
+
+	if (proc_id == PROC_PARENT && pidfile != NULL) {
+		pidfd = write_pidfile(pidfile);
+		if (atexit(rmpidfile) == -1)
+			fatalx("failed to register atexit handler");
 	}
 
 	ps = xcalloc(1, sizeof(*ps));

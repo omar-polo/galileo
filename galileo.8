@@ -1,5 +1,5 @@
 .\"
-.\" Copyright (c) 2022 Omar Polo
+.\" Copyright (c) 2022, 2025 Omar Polo
 .\"
 .\" Permission to use, copy, modify, and distribute this software for any
 .\" purpose with or without fee is hereby granted, provided that the above
@@ -12,7 +12,7 @@
 .\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-.Dd September 24, 2022
+.Dd July 23, 2025
 .Dt GALILEO 8
 .Os
 .Sh NAME
@@ -23,6 +23,7 @@
 .Op Fl dnv
 .Op Fl D Ar macro Ns = Ns Ar value
 .Op Fl f Ar file
+.Op Fl P Ar pidfile
 .Sh DESCRIPTION
 .Nm
 is a FastCGI server that proxies the content of a Gemini capsule.
@@ -45,6 +46,13 @@ The default is
 .Pa /etc/galileo.conf .
 .It Fl n
 Parse the configuration file, report errors if any, and exit.
+.It Fl P Ar pidfile
+Write the daemon's pid to the given location.
+.Ar pidfile
+also prevents multiple instances from running: if another process is
+holding a lock on that file,
+.Nm
+refuses to start.
 .It Fl v
 Verbose mode.
 .El

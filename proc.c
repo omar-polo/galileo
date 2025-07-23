@@ -92,7 +92,7 @@ proc_exec(struct privsep *ps, struct privsep_proc *procs, unsigned int nproc,
 	nargv[nargc++] = argv[0];
 
 	/* Set process name argument and save the position. */
-	nargv[nargc++] = "-P";
+	nargv[nargc++] = "-T";
 	proc_i = nargc;
 	nargc++;
 
