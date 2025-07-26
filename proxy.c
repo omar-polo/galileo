@@ -848,6 +848,10 @@ proxy_read(struct bufferevent *bev, void *d)
 	    tp_head(clt->clt_tp, lang, NULL) == -1)
 		goto err;
 
+	if (!clt->clt_translate &&
+	    template_flush(clt->clt_tp) == -1)
+		goto err;
+
 	/*
 	 * Trigger the read again so we proceed with the response
 	 * body, if any.

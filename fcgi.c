@@ -709,7 +709,7 @@ dowrite(struct client *clt, const void *data, size_t len)
 	hdr.content_len1 = (len >> 8);
 
 	if (bufferevent_write(bev, &hdr, sizeof(hdr)) == -1 ||
-	    bufferevent_write(bev, clt->clt_buf, len) == -1) {
+	    bufferevent_write(bev, data, len) == -1) {
 		fcgi_error(bev, EV_WRITE, fcgi);
 		return (-1);
 	}
