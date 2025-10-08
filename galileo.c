@@ -80,7 +80,7 @@ rmpidfile(void)
 }
 
 static int
-write_pidfile(const char *path)
+open_pidfile(const char *path)
 {
 	struct flock	lock;
 	int		fd;
@@ -99,8 +99,6 @@ write_pidfile(const char *path)
 
 	if (ftruncate(fd, 0) == -1)
 		fatal("ftruncate %s", path);
-
-	dprintf(fd, "%d\n", getpid());
 
 	return fd;
 }
@@ -184,7 +182,7 @@ main(int argc, char **argv)
 	}
 
 	if (proc_id == PROC_PARENT && pidfile != NULL) {
-		pidfd = write_pidfile(pidfile);
+		pidfd = open_pidfile(pidfile);
 		if (atexit(rmpidfile) == -1)
 			fatalx("failed to register atexit handler");
 	}
@@ -215,6 +213,10 @@ main(int argc, char **argv)
 	log_procinit("parent");
 	if (!debug && daemon(0, 0) == -1)
 		fatal("failed to daemonize");
+
+	/* after daemon(3) the pid could have changed */
+	if (pidfd != -1)
+		dprintf(pidfd, "%d\n", getpid());
 
 	log_init(debug, LOG_DAEMON);
 
